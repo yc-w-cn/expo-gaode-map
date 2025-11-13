@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android", "web"],
+  "apple": {
+    "modules": ["ExpoGaodeMapModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.gaodemap.ExpoGaodeMapModule"]
+  }
+}

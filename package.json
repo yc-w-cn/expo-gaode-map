@@ -1,0 +1,43 @@
+{
+  "name": "expo-gaode-map",
+  "version": "0.1.0",
+  "description": "高德地图 react-native 安卓和 ios",
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
+  "scripts": {
+    "build": "expo-module build",
+    "clean": "expo-module clean",
+    "lint": "expo-module lint",
+    "test": "expo-module test",
+    "prepare": "expo-module prepare",
+    "prepublishOnly": "expo-module prepublishOnly",
+    "expo-module": "expo-module",
+    "open:ios": "xed example/ios",
+    "open:android": "open -a \"Android Studio\" example/android"
+  },
+  "keywords": [
+    "react-native",
+    "expo",
+    "expo-gaode-map",
+    "ExpoGaodeMap"
+  ],
+  "repository": "https://github.com/TomWq/expo-gaode-map",
+  "bugs": {
+    "url": "https://github.com/TomWq/expo-gaode-map/issues"
+  },
+  "author": "尚博信_王强 <wangqiang03@sunboxsoft.com> (https://github.com/TomWq)",
+  "license": "MIT",
+  "homepage": "https://github.com/TomWq/expo-gaode-map#readme",
+  "dependencies": {},
+  "devDependencies": {
+    "@types/react": "~19.1.0",
+    "expo-module-scripts": "^5.0.7",
+    "expo": "^54.0.18",
+    "react-native": "0.81.5"
+  },
+  "peerDependencies": {
+    "expo": "*",
+    "react": "*",
+    "react-native": "*"
+  }
+}
