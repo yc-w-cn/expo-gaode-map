@@ -1,0 +1,249 @@
+/**
+ * 高德地图视图相关类型定义
+ * 基于 Expo Modules API
+ */
+
+import type { StyleProp, ViewStyle } from 'react-native';
+import type { CameraPosition, LatLng, LatLngBounds, MapPoi, MapType, Point } from './common.types';
+
+/**
+ * 地图相机事件
+ */
+export interface CameraEvent {
+  /**
+   * 相机位置
+   */
+  cameraPosition: CameraPosition;
+
+  /**
+   * 可见区域边界
+   */
+  latLngBounds: LatLngBounds;
+}
+
+/**
+ * 地图视图属性
+ */
+export interface MapViewProps {
+  /**
+   * 地图类型
+   */
+  mapType?: MapType;
+
+  /**
+   * 初始相机位置
+   */
+  initialCameraPosition?: CameraPosition;
+
+  /**
+   * 是否显示当前定位
+   */
+  myLocationEnabled?: boolean;
+
+  /**
+   * 是否跟随用户位置
+   * 当为 true 时，地图会自动移动跟随用户位置（适合导航场景）
+   * 当为 false 时，只显示定位点，不会自动移动地图（默认值，适合浏览场景）
+   * @default false
+   */
+  followUserLocation?: boolean;
+
+  /**
+   * 是否显示定位图标
+   */
+  myLocationIcon?: boolean;
+
+  /**
+   * 是否显示室内地图
+   */
+  indoorViewEnabled?: boolean;
+
+  /**
+   * 是否显示3D建筑
+   */
+  buildingsEnabled?: boolean;
+
+  /**
+   * 是否显示标注
+   */
+  labelsEnabled?: boolean;
+
+  /**
+   * 是否显示指南针
+   */
+  compassEnabled?: boolean;
+
+  /**
+   * 是否显示缩放按钮
+   * @platform android
+   */
+  zoomControlsEnabled?: boolean;
+
+  /**
+   * 是否显示比例尺
+   */
+  scaleControlsEnabled?: boolean;
+
+  /**
+   * 是否显示定位按钮
+   * @platform android
+   */
+  myLocationButtonEnabled?: boolean;
+
+  /**
+   * 是否显示路况
+   */
+  trafficEnabled?: boolean;
+
+  /**
+   * 最大缩放级别
+   */
+  maxZoom?: number;
+
+  /**
+   * 最小缩放级别
+   */
+  minZoom?: number;
+
+  /**
+   * 是否启用缩放手势
+   */
+  zoomGesturesEnabled?: boolean;
+
+  /**
+   * 是否启用滑动手势
+   */
+  scrollGesturesEnabled?: boolean;
+
+  /**
+   * 是否启用旋转手势
+   */
+  rotateGesturesEnabled?: boolean;
+
+  /**
+   * 是否启用倾斜手势
+   */
+  tiltGesturesEnabled?: boolean;
+
+  /**
+   * 定位的最小更新距离（米）
+   * @platform ios
+   */
+  distanceFilter?: number;
+
+  /**
+   * 最小更新角度（度）
+   * @platform ios
+   */
+  headingFilter?: number;
+
+  /**
+   * 样式
+   */
+  style?: StyleProp<ViewStyle>;
+
+  /**
+   * 点击地图事件
+   */
+  onPress?: (event: LatLng) => void;
+
+  /**
+   * 点击标注点事件
+   */
+  onPressPoi?: (event: MapPoi) => void;
+
+  /**
+   * 长按地图事件
+   */
+  onLongPress?: (event: LatLng) => void;
+
+  /**
+   * 地图状态改变事件（实时触发）
+   */
+  onCameraMove?: (event: CameraEvent) => void;
+
+  /**
+   * 地图状态改变完成事件
+   */
+  onCameraIdle?: (event: CameraEvent) => void;
+
+  /**
+   * 地图加载完成事件
+   */
+  onLoad?: (event: {}) => void;
+
+  /**
+   * 地图定位更新事件
+   */
+  onLocation?: (event: Location) => void;
+
+  /**
+   * 子组件
+   */
+  children?: React.ReactNode;
+}
+
+/**
+ * 地图视图方法
+ */
+export interface MapViewMethods {
+  /**
+   * 移动相机
+   * @param cameraPosition 目标相机位置
+   * @param duration 动画时长（毫秒）
+   */
+  moveCamera(cameraPosition: CameraPosition, duration?: number): void;
+
+  /**
+   * 将屏幕坐标转换为地理坐标
+   * @param point 屏幕坐标
+   * @returns 地理坐标
+   */
+  getLatLng(point: Point): Promise<LatLng>;
+}
+
+/**
+ * MapView Ref 公开接口（用户使用）
+ */
+export interface MapViewRef {
+  moveCamera(position: CameraPosition, duration?: number): Promise<void>;
+  getLatLng(point: Point): Promise<LatLng>;
+  setCenter(center: LatLng, animated?: boolean): Promise<void>;
+  setZoom(zoom: number, animated?: boolean): Promise<void>;
+  getCameraPosition(): Promise<CameraPosition>;
+  addCircle(id: string, props: import('./overlays.types').CircleProps): Promise<void>;
+  removeCircle(id: string): Promise<void>;
+  updateCircle(id: string, props: Partial<import('./overlays.types').CircleProps>): Promise<void>;
+  addMarker(id: string, props: import('./overlays.types').MarkerProps): Promise<void>;
+  removeMarker(id: string): Promise<void>;
+  updateMarker(id: string, props: Partial<import('./overlays.types').MarkerProps>): Promise<void>;
+  addPolyline(id: string, props: import('./overlays.types').PolylineProps): Promise<void>;
+  removePolyline(id: string): Promise<void>;
+  updatePolyline(id: string, props: Partial<import('./overlays.types').PolylineProps>): Promise<void>;
+  addPolygon(id: string, props: import('./overlays.types').PolygonProps): Promise<void>;
+  removePolygon(id: string): Promise<void>;
+  updatePolygon(id: string, props: Partial<import('./overlays.types').PolygonProps>): Promise<void>;
+}
+
+/**
+ * 原生 MapView Ref 接口（所有参数必需）
+ */
+export interface NativeMapViewRef {
+  moveCamera(position: CameraPosition, duration: number): Promise<void>;
+  getLatLng(point: Point): Promise<LatLng>;
+  setCenter(center: LatLng, animated: boolean): Promise<void>;
+  setZoom(zoom: number, animated: boolean): Promise<void>;
+  getCameraPosition(): Promise<CameraPosition>;
+  addCircle(id: string, props: import('./overlays.types').CircleProps): Promise<void>;
+  removeCircle(id: string): Promise<void>;
+  updateCircle(id: string, props: Partial<import('./overlays.types').CircleProps>): Promise<void>;
+  addMarker(id: string, props: import('./overlays.types').MarkerProps): Promise<void>;
+  removeMarker(id: string): Promise<void>;
+  updateMarker(id: string, props: Partial<import('./overlays.types').MarkerProps>): Promise<void>;
+  addPolyline(id: string, props: import('./overlays.types').PolylineProps): Promise<void>;
+  removePolyline(id: string): Promise<void>;
+  updatePolyline(id: string, props: Partial<import('./overlays.types').PolylineProps>): Promise<void>;
+  addPolygon(id: string, props: import('./overlays.types').PolygonProps): Promise<void>;
+  removePolygon(id: string): Promise<void>;
+  updatePolygon(id: string, props: Partial<import('./overlays.types').PolygonProps>): Promise<void>;
+}

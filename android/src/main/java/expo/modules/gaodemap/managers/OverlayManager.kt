@@ -1,0 +1,324 @@
+package expo.modules.gaodemap.managers
+
+import android.util.Log
+import com.amap.api.maps.AMap
+import com.amap.api.maps.model.LatLng
+
+/**
+ * 覆盖物管理器
+ * 负责地图上所有覆盖物的添加、删除、更新
+ */
+class OverlayManager(private val aMap: AMap) {
+  
+  companion object {
+    private const val TAG = "OverlayManager"
+  }
+  
+  // 覆盖物存储
+  private val circles = mutableMapOf<String, com.amap.api.maps.model.Circle>()
+  private val markers = mutableMapOf<String, com.amap.api.maps.model.Marker>()
+  private val polylines = mutableMapOf<String, com.amap.api.maps.model.Polyline>()
+  private val polygons = mutableMapOf<String, com.amap.api.maps.model.Polygon>()
+  
+  // ==================== 圆形覆盖物 ====================
+  
+  fun addCircle(id: String, props: Map<String, Any>) {
+    Log.d(TAG, "🔵 addCircle: id=$id")
+    
+    @Suppress("UNCHECKED_CAST")
+    val center = props["center"] as? Map<String, Double>
+    val radius = (props["radius"] as? Number)?.toDouble() ?: 1000.0
+    val fillColor = (props["fillColor"] as? Number)?.toInt() ?: android.graphics.Color.argb(50, 0, 0, 255)
+    val strokeColor = (props["strokeColor"] as? Number)?.toInt() ?: android.graphics.Color.BLUE
+    val strokeWidth = (props["strokeWidth"] as? Number)?.toFloat() ?: 10f
+    
+    if (center != null) {
+      val lat = center["latitude"] ?: 0.0
+      val lng = center["longitude"] ?: 0.0
+      val latLng = LatLng(lat, lng)
+      
+      val options = com.amap.api.maps.model.CircleOptions()
+        .center(latLng)
+        .radius(radius)
+        .fillColor(fillColor)
+        .strokeColor(strokeColor)
+        .strokeWidth(strokeWidth)
+      
+      val circle = aMap.addCircle(options)
+      circles[id] = circle
+      Log.d(TAG, "✅ 圆形创建成功")
+    }
+  }
+  
+  fun removeCircle(id: String) {
+    circles[id]?.let { circle ->
+      circle.remove()
+      circles.remove(id)
+      Log.d(TAG, "✅ 圆形已移除: $id")
+    }
+  }
+  
+  fun updateCircle(id: String, props: Map<String, Any>) {
+    circles[id]?.let { circle ->
+      @Suppress("UNCHECKED_CAST")
+      val center = props["center"] as? Map<String, Double>
+      val radius = (props["radius"] as? Number)?.toDouble()
+      val fillColor = (props["fillColor"] as? Number)?.toInt()
+      val strokeColor = (props["strokeColor"] as? Number)?.toInt()
+      val strokeWidth = (props["strokeWidth"] as? Number)?.toFloat()
+      
+      center?.let {
+        val lat = it["latitude"] ?: 0.0
+        val lng = it["longitude"] ?: 0.0
+        circle.center = LatLng(lat, lng)
+      }
+      
+      radius?.let { circle.radius = it }
+      fillColor?.let { circle.fillColor = it }
+      strokeColor?.let { circle.strokeColor = it }
+      strokeWidth?.let { circle.strokeWidth = it }
+      
+      Log.d(TAG, "✅ 圆形已更新: $id")
+    }
+  }
+  
+  // ==================== 标记点 ====================
+  
+  fun addMarker(id: String, props: Map<String, Any>) {
+    Log.d(TAG, "📍 addMarker: id=$id")
+    
+    @Suppress("UNCHECKED_CAST")
+    val position = props["position"] as? Map<String, Double>
+    val title = props["title"] as? String
+    val draggable = props["draggable"] as? Boolean ?: false
+    
+    if (position != null) {
+      val lat = position["latitude"] ?: 0.0
+      val lng = position["longitude"] ?: 0.0
+      val latLng = LatLng(lat, lng)
+      
+      val options = com.amap.api.maps.model.MarkerOptions()
+        .position(latLng)
+        .draggable(draggable)
+      
+      title?.let { options.title(it) }
+      
+      val marker = aMap.addMarker(options)
+      
+      if (!title.isNullOrEmpty()) {
+        marker?.showInfoWindow()
+      }
+      
+      markers[id] = marker
+      Log.d(TAG, "✅ 标记点创建成功")
+    }
+  }
+  
+  fun removeMarker(id: String) {
+    markers[id]?.let { marker ->
+      marker.remove()
+      markers.remove(id)
+      Log.d(TAG, "✅ 标记点已移除: $id")
+    }
+  }
+  
+  fun updateMarker(id: String, props: Map<String, Any>) {
+    markers[id]?.let { marker ->
+      @Suppress("UNCHECKED_CAST")
+      val position = props["position"] as? Map<String, Double>
+      val title = props["title"] as? String
+      val draggable = props["draggable"] as? Boolean
+      
+      position?.let {
+        val lat = it["latitude"] ?: 0.0
+        val lng = it["longitude"] ?: 0.0
+        marker.position = LatLng(lat, lng)
+      }
+      
+      title?.let { marker.title = it }
+      draggable?.let { marker.isDraggable = it }
+      
+      Log.d(TAG, "✅ 标记点已更新: $id")
+    }
+  }
+  
+  // ==================== 折线 ====================
+  
+  fun addPolyline(id: String, props: Map<String, Any>) {
+    Log.d(TAG, "📏 addPolyline: id=$id")
+    
+    @Suppress("UNCHECKED_CAST")
+    val points = props["points"] as? List<Map<String, Double>>
+    val width = (props["width"] as? Number)?.toFloat() ?: 10f
+    
+    val colorValue = props["color"]
+    val color = when (colorValue) {
+      is Long -> colorValue.toInt()
+      is Int -> colorValue
+      is Double -> colorValue.toInt()
+      else -> android.graphics.Color.RED
+    }
+    
+    if (points != null && points.isNotEmpty()) {
+      val latLngs = points.map { point ->
+        val lat = point["latitude"] ?: 0.0
+        val lng = point["longitude"] ?: 0.0
+        LatLng(lat, lng)
+      }
+      
+      val options = com.amap.api.maps.model.PolylineOptions()
+        .addAll(latLngs)
+        .width(width)
+        .color(color)
+      
+      val polyline = aMap.addPolyline(options)
+      polylines[id] = polyline
+      Log.d(TAG, "✅ 折线创建成功")
+    }
+  }
+  
+  fun removePolyline(id: String) {
+    polylines[id]?.let { polyline ->
+      polyline.remove()
+      polylines.remove(id)
+      Log.d(TAG, "✅ 折线已移除: $id")
+    }
+  }
+  
+  fun updatePolyline(id: String, props: Map<String, Any>) {
+    polylines[id]?.let { polyline ->
+      @Suppress("UNCHECKED_CAST")
+      val points = props["points"] as? List<Map<String, Double>>
+      val width = (props["width"] as? Number)?.toFloat()
+      val color = (props["color"] as? Number)?.toInt()
+      
+      points?.let {
+        val latLngs = it.map { point ->
+          val lat = point["latitude"] ?: 0.0
+          val lng = point["longitude"] ?: 0.0
+          LatLng(lat, lng)
+        }
+        polyline.points = latLngs
+      }
+      
+      width?.let { polyline.width = it }
+      color?.let { polyline.color = it }
+      
+      Log.d(TAG, "✅ 折线已更新: $id")
+    }
+  }
+  
+  // ==================== 多边形 ====================
+  
+  fun addPolygon(id: String, props: Map<String, Any>) {
+    Log.d(TAG, "🔷 addPolygon: id=$id")
+    
+    @Suppress("UNCHECKED_CAST")
+    val points = props["points"] as? List<Map<String, Double>>
+    
+    val fillColorValue = props["fillColor"]
+    val fillColor = when (fillColorValue) {
+      is Long -> fillColorValue.toInt()
+      is Int -> fillColorValue
+      is Double -> fillColorValue.toInt()
+      else -> android.graphics.Color.argb(50, 0, 0, 255)
+    }
+    
+    val strokeColorValue = props["strokeColor"]
+    val strokeColor = when (strokeColorValue) {
+      is Long -> strokeColorValue.toInt()
+      is Int -> strokeColorValue
+      is Double -> strokeColorValue.toInt()
+      else -> android.graphics.Color.BLUE
+    }
+    
+    val strokeWidth = (props["strokeWidth"] as? Number)?.toFloat() ?: 10f
+    val zIndex = (props["zIndex"] as? Number)?.toFloat() ?: 0f
+    
+    if (points != null && points.size >= 3) {
+      val latLngs = points.map { point ->
+        val lat = point["latitude"] ?: 0.0
+        val lng = point["longitude"] ?: 0.0
+        LatLng(lat, lng)
+      }
+      
+      val options = com.amap.api.maps.model.PolygonOptions()
+        .addAll(latLngs)
+        .fillColor(fillColor)
+        .strokeColor(strokeColor)
+        .strokeWidth(strokeWidth)
+        .zIndex(zIndex)
+      
+      val polygon = aMap.addPolygon(options)
+      polygons[id] = polygon
+      Log.d(TAG, "✅ 多边形创建成功")
+    }
+  }
+  
+  fun removePolygon(id: String) {
+    polygons[id]?.let { polygon ->
+      polygon.remove()
+      polygons.remove(id)
+      Log.d(TAG, "✅ 多边形已移除: $id")
+    }
+  }
+  
+  fun updatePolygon(id: String, props: Map<String, Any>) {
+    polygons[id]?.let { polygon ->
+      @Suppress("UNCHECKED_CAST")
+      val points = props["points"] as? List<Map<String, Double>>
+      
+      val fillColorValue = props["fillColor"]
+      val fillColor = when (fillColorValue) {
+        is Long -> fillColorValue.toInt()
+        is Int -> fillColorValue
+        is Double -> fillColorValue.toInt()
+        else -> null
+      }
+      
+      val strokeColorValue = props["strokeColor"]
+      val strokeColor = when (strokeColorValue) {
+        is Long -> strokeColorValue.toInt()
+        is Int -> strokeColorValue
+        is Double -> strokeColorValue.toInt()
+        else -> null
+      }
+      
+      val strokeWidth = (props["strokeWidth"] as? Number)?.toFloat()
+      val zIndex = (props["zIndex"] as? Number)?.toFloat()
+      
+      points?.let {
+        val latLngs = it.map { point ->
+          val lat = point["latitude"] ?: 0.0
+          val lng = point["longitude"] ?: 0.0
+          LatLng(lat, lng)
+        }
+        polygon.points = latLngs
+      }
+      
+      fillColor?.let { polygon.fillColor = it }
+      strokeColor?.let { polygon.strokeColor = it }
+      strokeWidth?.let { polygon.strokeWidth = it }
+      zIndex?.let { polygon.zIndex = it }
+      
+      Log.d(TAG, "✅ 多边形已更新: $id")
+    }
+  }
+  
+  /**
+   * 清理所有覆盖物
+   */
+  fun clear() {
+    circles.values.forEach { it.remove() }
+    circles.clear()
+    
+    markers.values.forEach { it.remove() }
+    markers.clear()
+    
+    polylines.values.forEach { it.remove() }
+    polylines.clear()
+    
+    polygons.values.forEach { it.remove() }
+    polygons.clear()
+  }
+}

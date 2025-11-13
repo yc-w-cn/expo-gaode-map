@@ -41,3 +41,8 @@ android {
     abortOnError false
   }
 }
+
+dependencies {
+    // 3D地图SDK（已包含定位功能）
+    implementation 'com.amap.api:3dmap:10.0.600'
+}

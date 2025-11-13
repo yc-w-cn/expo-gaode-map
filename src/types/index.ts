@@ -1,0 +1,74 @@
+/*
+ * @Author       : 尚博信_王强 wangqiang03@sunboxsoft.com
+ * @Date         : 2025-11-13 14:25:51
+ * @LastEditors  : 尚博信_王强 wangqiang03@sunboxsoft.com
+ * @LastEditTime : 2025-11-13 14:25:57
+ * @FilePath     : /expo-gaode-map/src/types/index.ts
+ * @Description  : 
+ * 
+ * Copyright (c) 2025 by 尚博信_王强, All Rights Reserved. 
+ */
+/**
+ * 高德地图 Expo Module 类型定义统一导出
+ * 基于 Expo Modules API 重新设计
+ */
+
+// 通用类型
+export type {
+  Point,
+  LatLng,
+  MapPoi,
+  LatLngBounds,
+  CameraPosition,
+  Location,
+  ColorValue,
+} from './common.types';
+
+export { MapType } from './common.types';
+
+// 地图视图类型
+export type {
+  CameraEvent,
+  MapViewProps,
+  MapViewMethods,
+  MapViewRef,
+  NativeMapViewRef,
+} from './map-view.types';
+
+// 定位类型
+export type {
+  Coordinates,
+  ReGeocode,
+  LocationOptions,
+  LocationListener,
+  GeoLanguage,
+  LocationProtocol,
+} from './location.types';
+
+export {
+  LocationAccuracy,
+  LocationMode,
+  CoordinateType,
+} from './location.types';
+
+// 覆盖物类型
+export type {
+  MarkerProps,
+  PolylineProps,
+  PolygonProps,
+  CircleProps,
+  HeatMapProps,
+  MultiPointItem,
+  MultiPointProps,
+  ClusterParams,
+  ClusterPoint,
+  ClusterProps,
+} from './overlays.types';
+
+// SDK 模块类型
+export type {
+  SDKConfig,
+  AMapSDKModule,
+  AMapLocationModule,
+  ModuleEvents,
+} from './sdk.types';

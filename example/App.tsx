@@ -1,73 +1,584 @@
-import { useEvent } from 'expo';
-import ExpoGaodeMap, { ExpoGaodeMapView } from 'expo-gaode-map';
-import { Button, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { useState, useEffect, useRef } from 'react';
+import { 
+  MapView, 
+  MapViewRef,
+  Marker, 
+  Circle,
+  Polyline,
+  Polygon,
+  initSDK, 
+  start, 
+  stop, 
+  getCurrentLocation,
+  ExpoGaodeMapModule
+} from 'expo-gaode-map';
+import { StyleSheet, View, Text, Button, Alert, Platform, PermissionsAndroid } from 'react-native';
+
+// 定义圆形类型
+type CircleData = {
+  id: string;
+  center: { latitude: number; longitude: number };
+  radius: number;
+  fillColor: number;
+  strokeColor: number;
+  strokeWidth: number;
+};
+
+// 定义标记类型
+type MarkerData = {
+  id: string;
+  position: { latitude: number; longitude: number };
+  title: string;
+  draggable: boolean;
+};
+
+// 定义折线类型
+type PolylineData = {
+  id: string;
+  points: { latitude: number; longitude: number }[];
+  width: number;
+  color: number;
+};
+
+// 定义多边形类型
+type PolygonData = {
+  id: string;
+  points: { latitude: number; longitude: number }[];
+  fillColor: number;
+  strokeColor: number;
+  strokeWidth: number;
+};
 
 export default function App() {
-  const onChangePayload = useEvent(ExpoGaodeMap, 'onChange');
+  const mapRef = useRef<MapViewRef>(null);
+  const [location, setLocation] = useState<any>(null);
+  const [isLocating, setIsLocating] = useState(false);
+  const [circles, setCircles] = useState<CircleData[]>([]); // 存储多个圆形
+  const [markers, setMarkers] = useState<MarkerData[]>([]); // 存储多个标记
+  const [polylines, setPolylines] = useState<PolylineData[]>([]); // 存储多个折线
+  const [polygons, setPolygons] = useState<PolygonData[]>([]); // 存储多个多边形
+
+  useEffect(() => {
+    // 请求 Android 位置权限并初始化 SDK
+    const initializeApp = async () => {
+      try {
+        // Android 需要运行时请求位置权限
+        if (Platform.OS === 'android') {
+          console.log('正在请求 Android 位置权限...');
+          const granted = await PermissionsAndroid.requestMultiple([
+            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+            PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
+          ]);
+          
+          console.log('权限请求结果:', granted);
+          
+          if (
+            granted['android.permission.ACCESS_FINE_LOCATION'] === PermissionsAndroid.RESULTS.GRANTED &&
+            granted['android.permission.ACCESS_COARSE_LOCATION'] === PermissionsAndroid.RESULTS.GRANTED
+          ) {
+            console.log('✅ 位置权限已授予');
+          } else {
+            console.warn('⚠️ 位置权限被拒绝');
+            Alert.alert('权限提示', '需要位置权限才能使用定位功能');
+          }
+        }
+
+        // 初始化高德地图 SDK
+        console.log('正在初始化高德地图 SDK...');
+        initSDK({
+          androidKey: '8ac9e5983e34398473ecc23fec1d4adc',
+          iosKey: '',
+        });
+        console.log('✅ 高德地图 SDK 初始化成功');
+      } catch (error) {
+        console.error('❌ 初始化失败:', error);
+        Alert.alert('错误', `初始化失败: ${error}`);
+      }
+    };
+
+    initializeApp();
+  }, []);
+
+  // 开始连续定位
+  const startLocation = async () => {
+    try {
+      await start();
+      setIsLocating(true);
+      Alert.alert('成功', '开始定位');
+    } catch (error) {
+      console.error('开始定位失败:', error);
+      Alert.alert('错误', '开始定位失败');
+    }
+  };
+
+  // 停止定位
+  const stopLocation = async () => {
+    try {
+      await stop();
+      setIsLocating(false);
+      Alert.alert('成功', '停止定位');
+    } catch (error) {
+      console.error('停止定位失败:', error);
+    }
+  };
+
+  // 获取当前位置（单次定位）
+  const getLocation = async () => {
+    try {
+      const loc = await getCurrentLocation();
+      setLocation(loc);
+      console.log('当前位置:', loc);
+      
+      // 更新地图中心点 - 通过 ref 调用
+      if (mapRef.current) {
+        await mapRef.current.moveCamera({
+          target: {
+            latitude: loc.latitude,
+            longitude: loc.longitude,
+          },
+          zoom: 15,
+        }, 300);
+      }
+    } catch (error) {
+      console.error('获取位置失败:', error);
+      Alert.alert('错误', '获取位置失败');
+    }
+  };
+
+  // 添加圆形
+  const addCircle = () => {
+    if (!location) {
+      Alert.alert('提示', '请先获取位置');
+      return;
+    }
+
+    // 随机颜色
+    const colors = [
+      { fill: 0x4400FF00, stroke: 0xFF00FF00 }, // 绿色
+      { fill: 0x440000FF, stroke: 0xFFFF0000 }, // 红色
+      { fill: 0x44FF0000, stroke: 0xFF0000FF }, // 蓝色
+      { fill: 0x44FFFF00, stroke: 0xFFFF00FF }, // 黄色
+      { fill: 0x44FF00FF, stroke: 0xFFFFFF00 }, // 紫色
+    ];
+    
+    const randomColor = colors[circles.length % colors.length];
+    const randomOffset = () => (Math.random() - 0.5) * 0.01; // 随机偏移
+    
+    const newCircle: CircleData = {
+      id: `circle_${Date.now()}`,
+      center: {
+        latitude: location.latitude + randomOffset(),
+        longitude: location.longitude + randomOffset(),
+      },
+      radius: 100 + Math.random() * 200, // 100-300米随机半径
+      fillColor: randomColor.fill,
+      strokeColor: randomColor.stroke,
+      strokeWidth: 2,
+    };
+
+    setCircles(prev => [...prev, newCircle]);
+    Alert.alert('成功', `已添加第 ${circles.length + 1} 个圆形`);
+  };
+
+  // 移除最后一个圆形
+  const removeLastCircle = () => {
+    if (circles.length === 0) {
+      Alert.alert('提示', '没有圆形可移除');
+      return;
+    }
+    setCircles(prev => prev.slice(0, -1));
+    Alert.alert('成功', `已移除圆形，还剩 ${circles.length - 1} 个`);
+  };
+
+  // 清除所有圆形
+  const clearAllCircles = () => {
+    setCircles([]);
+    Alert.alert('成功', '已清除所有圆形');
+  };
+
+  // 添加标记
+  const addMarker = () => {
+    if (!location) {
+      Alert.alert('提示', '请先获取位置');
+      return;
+    }
+
+    const titles = ['标记A', '标记B', '标记C', '标记D', '标记E'];
+    const randomOffset = () => (Math.random() - 0.5) * 0.01; // 随机偏移
+    
+    const newMarker: MarkerData = {
+      id: `marker_${Date.now()}`,
+      position: {
+        latitude: location.latitude + randomOffset(),
+        longitude: location.longitude + randomOffset(),
+      },
+      title: titles[markers.length % titles.length],
+      draggable: markers.length % 2 === 0, // 奇偶交替可拖拽
+    };
+
+    setMarkers(prev => [...prev, newMarker]);
+    Alert.alert('成功', `已添加第 ${markers.length + 1} 个标记`);
+  };
+
+  // 移除最后一个标记
+  const removeLastMarker = () => {
+    if (markers.length === 0) {
+      Alert.alert('提示', '没有标记可移除');
+      return;
+    }
+    setMarkers(prev => prev.slice(0, -1));
+    Alert.alert('成功', `已移除标记，还剩 ${markers.length - 1} 个`);
+  };
+
+  // 清除所有标记
+  const clearAllMarkers = () => {
+    setMarkers([]);
+    Alert.alert('成功', '已清除所有标记');
+  };
+
+  // 添加折线
+  const addPolyline = () => {
+    if (!location) {
+      Alert.alert('提示', '请先获取位置');
+      return;
+    }
+
+    const colors = [
+      -65536,     // 红色 0xFFFF0000
+      -16711936,  // 绿色 0xFF00FF00
+      -16776961,  // 蓝色 0xFF0000FF
+      -256,       // 黄色 0xFFFFFF00
+      -65281,     // 紫色 0xFFFF00FF
+    ];
+    
+    const randomColor = colors[polylines.length % colors.length];
+    // 增加偏移量，让点之间距离更大，折线更明显
+    const randomOffset = () => (Math.random() - 0.5) * 0.05;
+    
+    // 生成3-5个点的折线
+    const pointCount = 3 + Math.floor(Math.random() * 3);
+    const points = Array.from({ length: pointCount }, (_, i) => ({
+      latitude: location.latitude + randomOffset(),
+      longitude: location.longitude + randomOffset(),
+    }));
+    
+    const newPolyline: PolylineData = {
+      id: `polyline_${Date.now()}`,
+      points,
+      width: 20, // 固定宽度 20，更明显
+      color: randomColor,
+    };
+
+    setPolylines(prev => [...prev, newPolyline]);
+    Alert.alert('成功', `已添加第 ${polylines.length + 1} 条折线（${pointCount}个点）\n颜色: ${['红色', '绿色', '蓝色', '黄色', '紫色'][polylines.length % 5]}`);
+  };
+
+  // 移除最后一条折线
+  const removeLastPolyline = () => {
+    if (polylines.length === 0) {
+      Alert.alert('提示', '没有折线可移除');
+      return;
+    }
+    setPolylines(prev => prev.slice(0, -1));
+    Alert.alert('成功', `已移除折线，还剩 ${polylines.length - 1} 条`);
+  };
+
+  // 清除所有折线
+  const clearAllPolylines = () => {
+    setPolylines([]);
+    Alert.alert('成功', '已清除所有折线');
+  };
+
+  // 添加多边形
+  const addPolygon = () => {
+    if (!location) {
+      Alert.alert('提示', '请先获取位置');
+      return;
+    }
+
+    // 使用 Android Color.argb() 格式
+    const randomIndex = polygons.length % 5;
+    const randomOffset = () => (Math.random() - 0.5) * 0.01; // 减小偏移量，确保在视野内
+    
+    // 生成一个明显的三角形
+    const points = [
+      { latitude: location.latitude, longitude: location.longitude },
+      { latitude: location.latitude + 0.002, longitude: location.longitude + 0.003 },
+      { latitude: location.latitude - 0.002, longitude: location.longitude + 0.003 },
+    ];
+    
+    // 使用负数表示有符号整数
+    // 0x880000FF = -2013265921 (有符号32位整数)
+    const fillColorUnsigned = 0x880000FF;
+    const fillColorSigned = fillColorUnsigned > 0x7FFFFFFF 
+      ? fillColorUnsigned - 0x100000000 
+      : fillColorUnsigned;
+    
+    const newPolygon: PolygonData = {
+      id: `polygon_${Date.now()}`,
+      points,
+      fillColor: fillColorSigned, // -2013265921
+      strokeColor: -65536,         // 红色边框
+      strokeWidth: 10,
+    };
+
+    console.log('🔷 添加多边形:', JSON.stringify(newPolygon));
+    console.log('🔷 fillColor 转换: 0x880000FF ->', fillColorSigned);
+    setPolygons(prev => [...prev, newPolygon]);
+    Alert.alert('成功', `已添加第 ${polygons.length + 1} 个多边形\n蓝色填充，红色边框`);
+  };
+
+  // 移除最后一个多边形
+  const removeLastPolygon = () => {
+    if (polygons.length === 0) {
+      Alert.alert('提示', '没有多边形可移除');
+      return;
+    }
+    setPolygons(prev => prev.slice(0, -1));
+    Alert.alert('成功', `已移除多边形，还剩 ${polygons.length - 1} 个`);
+  };
+
+  // 清除所有多边形
+  const clearAllPolygons = () => {
+    setPolygons([]);
+    Alert.alert('成功', '已清除所有多边形');
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.container}>
-        <Text style={styles.header}>Module API Example</Text>
-        <Group name="Constants">
-          <Text>{ExpoGaodeMap.PI}</Text>
-        </Group>
-        <Group name="Functions">
-          <Text>{ExpoGaodeMap.hello()}</Text>
-        </Group>
-        <Group name="Async functions">
-          <Button
-            title="Set value"
-            onPress={async () => {
-              await ExpoGaodeMap.setValueAsync('Hello from JS!');
-            }}
+    <View style={styles.container}>
+      <Text style={styles.title}>高德地图示例</Text>
+      
+      {/* 地图视图 */}
+      <MapView
+        ref={mapRef}
+        style={styles.map}
+        myLocationEnabled={true}
+        // followUserLocation={true}
+        myLocationIcon={true}
+        zoomControlsEnabled={false}
+       
+        initialCameraPosition={{
+          target: {
+            latitude: 39.90923,
+            longitude: 116.397428,
+          },
+          zoom:18,
+        }}
+        mapType={0}
+        onLoad={() => console.log('地图加载完成')}
+      >
+        {/* 渲染所有标记 */}
+        {markers.map((marker) => (
+          <Marker
+            key={marker.id}
+            position={marker.position}
+            title={marker.title}
+            draggable={marker.draggable}
           />
-        </Group>
-        <Group name="Events">
-          <Text>{onChangePayload?.value}</Text>
-        </Group>
-        <Group name="Views">
-          <ExpoGaodeMapView
-            url="https://www.example.com"
-            onLoad={({ nativeEvent: { url } }) => console.log(`Loaded: ${url}`)}
-            style={styles.view}
-          />
-        </Group>
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
+        ))}
 
-function Group(props: { name: string; children: React.ReactNode }) {
-  return (
-    <View style={styles.group}>
-      <Text style={styles.groupHeader}>{props.name}</Text>
-      {props.children}
+        {/* 渲染所有多边形 */}
+        {polygons.map((polygon) => (
+          <Polygon
+            key={polygon.id}
+            points={polygon.points}
+            fillColor={polygon.fillColor}
+            strokeColor={polygon.strokeColor}
+            strokeWidth={polygon.strokeWidth}
+          />
+        ))}
+
+        {/* 渲染所有折线 */}
+        {polylines.map((polyline) => (
+          <Polyline
+            key={polyline.id}
+            points={polyline.points}
+            width={polyline.width}
+            color={polyline.color}
+          />
+        ))}
+
+        {/* 渲染所有圆形 */}
+        {circles.map((circle) => (
+          <Circle
+            key={circle.id}
+            center={circle.center}
+            radius={circle.radius}
+            fillColor={circle.fillColor}
+            strokeColor={circle.strokeColor}
+            strokeWidth={circle.strokeWidth}
+          />
+        ))}
+      </MapView>
+
+      {/* 定位信息显示 */}
+      {/* {location && (
+        <View style={styles.infoContainer}>
+          <Text style={styles.infoText}>纬度: {location.latitude?.toFixed(6)}</Text>
+          <Text style={styles.infoText}>经度: {location.longitude?.toFixed(6)}</Text>
+          <Text style={styles.infoText}>精度: {location.accuracy?.toFixed(2)}m</Text>
+          {(location as any).address && (
+            <Text style={styles.infoText}>地址: {(location as any).address}</Text>
+          )}
+        </View>
+      )} */}
+
+      {/* 控制按钮 */}
+      <View style={styles.buttonContainer}>
+        <Button
+          title="获取当前位置"
+          onPress={getLocation}
+        />
+        <View style={styles.buttonSpacer} />
+        
+        {/* 标记控制按钮 */}
+        {location && (
+          <>
+            <Button
+              title={`添加标记 (当前 ${markers.length} 个)`}
+              onPress={addMarker}
+              color="#2196F3"
+            />
+            <View style={styles.buttonSpacer} />
+            <Button
+              title="移除最后一个标记"
+              onPress={removeLastMarker}
+              disabled={markers.length === 0}
+              color="#FF9800"
+            />
+            <View style={styles.buttonSpacer} />
+            <Button
+              title="清除所有标记"
+              onPress={clearAllMarkers}
+              disabled={markers.length === 0}
+              color="#FF6347"
+            />
+            <View style={styles.buttonSpacer} />
+          </>
+        )}
+        
+        {/* 多边形控制按钮 */}
+        {location && (
+          <>
+            <Button
+              title={`添加多边形 (当前 ${polygons.length} 个)`}
+              onPress={addPolygon}
+              color="#FF5722"
+            />
+            <View style={styles.buttonSpacer} />
+            <Button
+              title="移除最后一个多边形"
+              onPress={removeLastPolygon}
+              disabled={polygons.length === 0}
+              color="#FF9800"
+            />
+            <View style={styles.buttonSpacer} />
+            <Button
+              title="清除所有多边形"
+              onPress={clearAllPolygons}
+              disabled={polygons.length === 0}
+              color="#FF6347"
+            />
+            <View style={styles.buttonSpacer} />
+          </>
+        )}
+        
+        {/* 折线控制按钮 */}
+        {location && (
+          <>
+            <Button
+              title={`添加折线 (当前 ${polylines.length} 条)`}
+              onPress={addPolyline}
+              color="#9C27B0"
+            />
+            <View style={styles.buttonSpacer} />
+            <Button
+              title="移除最后一条折线"
+              onPress={removeLastPolyline}
+              disabled={polylines.length === 0}
+              color="#FF9800"
+            />
+            <View style={styles.buttonSpacer} />
+            <Button
+              title="清除所有折线"
+              onPress={clearAllPolylines}
+              disabled={polylines.length === 0}
+              color="#FF6347"
+            />
+            <View style={styles.buttonSpacer} />
+          </>
+        )}
+        
+        {/* 圆形控制按钮 */}
+        {location && (
+          <>
+            <Button
+              title={`添加圆形 (当前 ${circles.length} 个)`}
+              onPress={addCircle}
+              color="#4CAF50"
+            />
+            <View style={styles.buttonSpacer} />
+            <Button
+              title="移除最后一个圆形"
+              onPress={removeLastCircle}
+              disabled={circles.length === 0}
+              color="#FF9800"
+            />
+            <View style={styles.buttonSpacer} />
+            <Button
+              title="清除所有圆形"
+              onPress={clearAllCircles}
+              disabled={circles.length === 0}
+              color="#FF6347"
+            />
+          </>
+        )}
+        
+        <View style={styles.buttonSpacer} />
+        <Button
+          title={isLocating ? "停止定位" : "开始连续定位"}
+          onPress={isLocating ? stopLocation : startLocation}
+          color={isLocating ? "#FF6347" : "#4CAF50"}
+        />
+      </View>
     </View>
   );
 }
 
-const styles = {
-  header: {
-    fontSize: 30,
-    margin: 20,
-  },
-  groupHeader: {
-    fontSize: 20,
-    marginBottom: 20,
-  },
-  group: {
-    margin: 20,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 20,
-  },
+const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#eee',
+    backgroundColor: '#f5f5f5',
   },
-  view: {
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginTop: Platform.OS === 'ios' ? 50 : 20,
+    marginBottom: 10,
+  },
+  map: {
     flex: 1,
-    height: 200,
+    minHeight: 400,
   },
-};
+  infoContainer: {
+    backgroundColor: 'white',
+    padding: 15,
+    borderTopWidth: 1,
+    borderTopColor: '#ddd',
+  },
+  infoText: {
+    fontSize: 14,
+    marginVertical: 2,
+    color: '#333',
+  },
+  buttonContainer: {
+    padding: 15,
+    backgroundColor: 'white',
+    borderTopWidth: 1,
+    borderTopColor: '#ddd',
+  },
+  buttonSpacer: {
+    height: 10,
+  },
+});
