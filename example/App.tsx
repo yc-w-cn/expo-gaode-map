@@ -1,17 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
-import { 
-  MapView, 
+import {
+  MapView,
   MapViewRef,
-  Marker, 
+  Marker,
   Circle,
   Polyline,
   Polygon,
-  initSDK, 
-  start, 
-  stop, 
+  initSDK,
+  start,
+  stop,
   getCurrentLocation,
+  checkLocationPermission,
+  requestLocationPermission,
 } from 'expo-gaode-map';
-import {Image, StyleSheet, View, Text, Button, Alert, Platform, PermissionsAndroid, ScrollView } from 'react-native';
+import {Image, StyleSheet, View, Text, Button, Alert, Platform, ScrollView, Animated } from 'react-native';
 
 // 定义圆形类型
 type CircleData = {
@@ -56,46 +58,47 @@ export default function App() {
   const mapRef = useRef<MapViewRef>(null);
   const [location, setLocation] = useState<any>(null);
   const [isLocating, setIsLocating] = useState(false);
-  const [circles, setCircles] = useState<CircleData[]>([]); // 存储多个圆形
-  const [markers, setMarkers] = useState<MarkerData[]>([]); // 存储多个标记
-  const [polylines, setPolylines] = useState<PolylineData[]>([]); // 存储多个折线
-  const [polygons, setPolygons] = useState<PolygonData[]>([]); // 存储多个多边形
+  const [circles, setCircles] = useState<CircleData[]>([]);
+  const [markers, setMarkers] = useState<MarkerData[]>([]);
+  const [polylines, setPolylines] = useState<PolylineData[]>([]);
+  const [polygons, setPolygons] = useState<PolygonData[]>([]);
+  const [initialPosition, setInitialPosition] = useState<any>(null);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // 请求 Android 位置权限并初始化 SDK
     const initializeApp = async () => {
       try {
-        // Android 需要运行时请求位置权限
-        if (Platform.OS === 'android') {
-          console.log('正在请求 Android 位置权限...');
-          const granted = await PermissionsAndroid.requestMultiple([
-            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-            PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
-          ]);
-          
-          console.log('权限请求结果:', granted);
-          
-          if (
-            granted['android.permission.ACCESS_FINE_LOCATION'] === PermissionsAndroid.RESULTS.GRANTED &&
-            granted['android.permission.ACCESS_COARSE_LOCATION'] === PermissionsAndroid.RESULTS.GRANTED
-          ) {
-            console.log('✅ 位置权限已授予');
-          } else {
-            console.warn('⚠️ 位置权限被拒绝');
-            Alert.alert('权限提示', '需要位置权限才能使用定位功能');
-          }
-        }
-
-        // 初始化高德地图 SDK
         console.log('正在初始化高德地图 SDK...');
         initSDK({
           androidKey: '8ac9e5983e34398473ecc23fec1d4adc',
           iosKey: 'b07b626eb2ce321df3ff0e9e9371f389',
         });
-        console.log('✅ 高德地图 SDK 初始化成功');
+        
+        const status = await checkLocationPermission();
+        if (!status.granted) {
+          const result = await requestLocationPermission();
+          if (!result.granted) {
+            setInitialPosition({ target: { latitude: 39.90923, longitude: 116.397428 }, zoom: 18 });
+            return;
+          }
+        }
+        
+        const loc = await getCurrentLocation();
+        setLocation(loc);
+        setInitialPosition({
+          target: { latitude: loc.latitude, longitude: loc.longitude },
+          zoom: 15
+        });
+        
+        // 淡入动画
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }).start();
       } catch (error) {
-        console.error('❌ 初始化失败:', error);
-        Alert.alert('错误', `初始化失败: ${error}`);
+        console.error('初始化失败:', error);
+        setInitialPosition({ target: { latitude: 39.90923, longitude: 116.397428 }, zoom: 18 });
       }
     };
 
@@ -354,88 +357,68 @@ export default function App() {
     <View style={styles.container}>
       <Text style={styles.title}>高德地图示例</Text>
       
-      {/* 地图视图 */}
-      <MapView
-        ref={mapRef}
-        style={styles.map}
-        myLocationEnabled={true}
-        indoorViewEnabled={true}
-        mapType={4}
-         userLocationRepresentation={{
-            // showsAccuracyRing: true,
-            // fillColor: '#4285F4',
-            // strokeColor: '#1967D2',
-            // lineWidth: 2,
-            // enablePulseAnimation: true, // 仅 iOS
-            // locationDotFillColor: 'blue', // 仅 iOS
-            // image:iconUri,
-            // imageWidth: 40,
-            // imageHeight: 40,
-          }}
-          onMapPress={() => {
-            console.log('onMapPress:');
-          }}
-          onMapLongPress={()=>{
-            console.log('onMapLongPress');
-          }}
-        compassEnabled={false}
-        tiltGesturesEnabled={false}
-        initialCameraPosition={{
-          target: {
-            latitude: 39.90923,
-            longitude: 116.397428,
-          },
-          zoom: 18,  // 室内地图需要较高缩放级别
-        }}
-       minZoom={10}
-        maxZoom={20}
-        // mapType={3}
-        onLoad={() => console.log('地图加载完成')}
-      >
-        {/* 渲染所有标记 */}
-        {markers.map((marker) => (
-          <Marker
-            key={marker.id}
-            position={marker.position}
-            title={marker.title}
-            draggable={marker.draggable}
-          />
-        ))}
-
-        {/* 渲染所有多边形 */}
-        {polygons.map((polygon) => (
-          <Polygon
-            key={polygon.id}
-            points={polygon.points}
-            fillColor={polygon.fillColor}
-            strokeColor={polygon.strokeColor}
-            strokeWidth={polygon.strokeWidth}
-          />
-        ))}
-
-        {/* 渲染所有折线 */}
-        {polylines.map((polyline) => (
-          <Polyline
-            key={polyline.id}
-            points={polyline.points}
-            width={polyline.width}
-            color={polyline.color}
-            texture={polyline.texture}
-          />
-        ))}
-
-        {/* 渲染所有圆形 */}
-        {circles.map((circle) => (
-          <Circle
-            key={circle.id}
-            center={circle.center}
-            radius={circle.radius}
-            fillColor={circle.fillColor}
-            strokeColor={circle.strokeColor}
-            strokeWidth={circle.strokeWidth}
-          />
-        ))}
-      </MapView>
+      {initialPosition ? (
+        <Animated.View style={[styles.map, { opacity: fadeAnim }]}>
+          <MapView
+          ref={mapRef}
+          style={styles.map}
+          myLocationEnabled={true}
+          indoorViewEnabled={true}
+          trafficEnabled={true}
+          mapType={0}
+          userLocationRepresentation={{}}
+          onMapPress={() => console.log('onMapPress:')}
+          onMapLongPress={() => console.log('onMapLongPress')}
+          compassEnabled={false}
+          tiltGesturesEnabled={false}
+          initialCameraPosition={initialPosition}
+          minZoom={10}
+          maxZoom={20}
+          onLoad={() => console.log('地图加载完成')}
+        >
+          {markers.map((marker) => (
+            <Marker
+              key={marker.id}
+              position={marker.position}
+              title={marker.title}
+              draggable={marker.draggable}
+            />
+          ))}
+          {polygons.map((polygon) => (
+            <Polygon
+              key={polygon.id}
+              points={polygon.points}
+              fillColor={polygon.fillColor}
+              strokeColor={polygon.strokeColor}
+              strokeWidth={polygon.strokeWidth}
+            />
+          ))}
+          {polylines.map((polyline) => (
+            <Polyline
+              key={polyline.id}
+              points={polyline.points}
+              width={polyline.width}
+              color={polyline.color}
+              texture={polyline.texture}
+            />
+          ))}
+          {circles.map((circle) => (
+            <Circle
+              key={circle.id}
+              center={circle.center}
+              radius={circle.radius}
+              fillColor={circle.fillColor}
+              strokeColor={circle.strokeColor}
+              strokeWidth={circle.strokeWidth}
+            />
+          ))}
+          </MapView>
+        </Animated.View>
+      ) : (
+        <View style={styles.map}>
+          <Text style={styles.title}>正在加载地图...</Text>
+        </View>
+      )}
 
       {/* 定位信息显示 */}
       {location && (

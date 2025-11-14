@@ -134,7 +134,11 @@ interface MapViewRef {
 
 ## 定位 API
 
-> ⚠️ **权限要求**：所有定位 API 都需要定位权限，请确保已配置并获得用户授权
+> ⚠️ **权限要求**：所有定位 API 都需要定位权限
+>
+> 使用前请先调用 `checkLocationPermission()` 和 `requestLocationPermission()`
+>
+> 详细说明: [INITIALIZATION.md](./INITIALIZATION.md)
 
 ### 定位控制
 

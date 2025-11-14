@@ -1,6 +1,8 @@
 package expo.modules.gaodemap.managers
 
 import android.graphics.Point
+import android.os.Handler
+import android.os.Looper
 import com.amap.api.maps.AMap
 import com.amap.api.maps.CameraUpdateFactory
 import com.amap.api.maps.model.CameraPosition
@@ -11,6 +13,8 @@ import com.amap.api.maps.model.LatLng
  * 负责地图相机位置、缩放、倾斜等操作
  */
 class CameraManager(private val aMap: AMap) {
+  
+  private val mainHandler = Handler(Looper.getMainLooper())
   
   /**
    * 设置最大缩放级别
@@ -56,28 +60,30 @@ class CameraManager(private val aMap: AMap) {
    * 移动相机
    */
   fun moveCamera(position: Map<String, Any>, duration: Int) {
-    @Suppress("UNCHECKED_CAST")
-    val target = position["target"] as? Map<String, Double>
-    val zoom = (position["zoom"] as? Number)?.toFloat()
-    val tilt = (position["tilt"] as? Number)?.toFloat()
-    val bearing = (position["bearing"] as? Number)?.toFloat()
-    
-    if (target != null) {
-      val lat = target["latitude"] ?: 0.0
-      val lng = target["longitude"] ?: 0.0
-      val latLng = LatLng(lat, lng)
+    mainHandler.post {
+      @Suppress("UNCHECKED_CAST")
+      val target = position["target"] as? Map<String, Double>
+      val zoom = (position["zoom"] as? Number)?.toFloat()
+      val tilt = (position["tilt"] as? Number)?.toFloat()
+      val bearing = (position["bearing"] as? Number)?.toFloat()
       
-      val builder = CameraPosition.Builder().target(latLng)
-      zoom?.let { builder.zoom(it) }
-      tilt?.let { builder.tilt(it) }
-      bearing?.let { builder.bearing(it) }
-      
-      val cameraUpdate = CameraUpdateFactory.newCameraPosition(builder.build())
-      
-      if (duration > 0) {
-        aMap.animateCamera(cameraUpdate, duration.toLong(), null)
-      } else {
-        aMap.moveCamera(cameraUpdate)
+      if (target != null) {
+        val lat = target["latitude"] ?: 0.0
+        val lng = target["longitude"] ?: 0.0
+        val latLng = LatLng(lat, lng)
+        
+        val builder = CameraPosition.Builder().target(latLng)
+        zoom?.let { builder.zoom(it) }
+        tilt?.let { builder.tilt(it) }
+        bearing?.let { builder.bearing(it) }
+        
+        val cameraUpdate = CameraUpdateFactory.newCameraPosition(builder.build())
+        
+        if (duration > 0) {
+          aMap.animateCamera(cameraUpdate, duration.toLong(), null)
+        } else {
+          aMap.moveCamera(cameraUpdate)
+        }
       }
     }
   }

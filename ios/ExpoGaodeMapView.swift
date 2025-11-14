@@ -1,17 +1,39 @@
 import ExpoModulesCore
 import MAMapKit
 
+/**
+ * 高德地图视图组件
+ * 
+ * 负责:
+ * - 地图视图的创建和管理
+ * - 相机控制和手势交互
+ * - 覆盖物的添加和管理
+ * - 地图事件的派发
+ */
 class ExpoGaodeMapView: ExpoView, MAMapViewDelegate {
+    // MARK: - 属性
+    
+    /// 地图类型 (0:标准 1:卫星 2:夜间 3:导航)
     var mapType: Int = 0
+    /// 初始相机位置
     var initialCameraPosition: [String: Any]?
+    /// 是否显示缩放控件
     var showsZoomControls: Bool = true
+    /// 是否显示指南针
     var showsCompass: Bool = true
+    /// 是否显示比例尺
     var showsScale: Bool = true
+    /// 是否启用缩放手势
     var isZoomEnabled: Bool = true
+    /// 是否启用滚动手势
     var isScrollEnabled: Bool = true
+    /// 是否启用旋转手势
     var isRotateEnabled: Bool = true
+    /// 是否启用倾斜手势
     var isTiltEnabled: Bool = true
+    /// 是否显示用户位置
     var showsUserLocation: Bool = false
+    /// 是否跟随用户位置
     var followUserLocation: Bool = false {
         didSet {
             if showsUserLocation {
@@ -19,22 +41,39 @@ class ExpoGaodeMapView: ExpoView, MAMapViewDelegate {
             }
         }
     }
+    /// 用户位置样式配置
     var userLocationRepresentation: [String: Any]?
+    /// 是否显示交通路况
     var showsTraffic: Bool = false
+    /// 是否显示建筑物
     var showsBuildings: Bool = false
+    /// 是否显示室内地图
     var showsIndoorMap: Bool = false
+    /// 最大缩放级别
     var maxZoomLevel: CGFloat = 20
+    /// 最小缩放级别
     var minZoomLevel: CGFloat = 3
+    
+    // MARK: - 事件派发器
     
     let onMapPress = EventDispatcher()
     let onMapLongPress = EventDispatcher()
     let onLoad = EventDispatcher()
     
+    // MARK: - 私有属性
+    
+    /// 高德地图视图实例
     private var mapView: MAMapView!
+    /// 相机管理器
     private var cameraManager: CameraManager!
+    /// UI 管理器
     private var uiManager: UIManager!
+    /// 覆盖物管理器
     private var overlayManager: OverlayManager!
+    /// 地图是否已加载完成
     private var isMapLoaded = false
+    
+    // MARK: - 初始化
     
     required init(appContext: AppContext? = nil) {
         super.init(appContext: appContext)
@@ -60,10 +99,13 @@ class ExpoGaodeMapView: ExpoView, MAMapViewDelegate {
         mapView.frame = bounds
     }
     
+    /**
+     * 添加子视图时自动连接到地图
+     * 将地图实例传递给覆盖物子视图
+     */
     override func addSubview(_ view: UIView) {
         super.addSubview(view)
         
-        // 自动将地图实例传递给覆盖物子视图
         if let markerView = view as? MarkerView {
             markerView.setMap(mapView)
         } else if let circleView = view as? CircleView {
@@ -81,6 +123,9 @@ class ExpoGaodeMapView: ExpoView, MAMapViewDelegate {
         }
     }
     
+    /**
+     * 设置默认配置
+     */
     private func setupDefaultConfig() {
         uiManager.setMapType(0)
         uiManager.setShowsScale(showsScale)
@@ -92,6 +137,10 @@ class ExpoGaodeMapView: ExpoView, MAMapViewDelegate {
         uiManager.setShowsUserLocation(showsUserLocation, followUser: followUserLocation)
     }
     
+    /**
+     * 应用所有属性配置
+     * 在 Props 更新时调用
+     */
     func applyProps() {
         uiManager.setMapType(mapType)
         
@@ -111,6 +160,8 @@ class ExpoGaodeMapView: ExpoView, MAMapViewDelegate {
         uiManager.setShowsIndoorMap(showsIndoorMap)
     }
     
+    // MARK: - 缩放控制
+    
     func setMaxZoom(_ maxZoom: Double) {
         cameraManager.setMaxZoomLevel(CGFloat(maxZoom))
     }
@@ -118,6 +169,8 @@ class ExpoGaodeMapView: ExpoView, MAMapViewDelegate {
     func setMinZoom(_ minZoom: Double) {
         cameraManager.setMinZoomLevel(CGFloat(minZoom))
     }
+    
+    // MARK: - 相机控制
     
     func moveCamera(position: [String: Any], duration: Int) {
         cameraManager.moveCamera(position: position, duration: duration)
@@ -138,6 +191,8 @@ class ExpoGaodeMapView: ExpoView, MAMapViewDelegate {
     func getCameraPosition() -> [String: Any] {
         return cameraManager.getCameraPosition()
     }
+    
+    // MARK: - 覆盖物管理
     
     func addCircle(id: String, props: [String: Any]) {
         overlayManager.addCircle(id: id, props: props)
@@ -187,6 +242,8 @@ class ExpoGaodeMapView: ExpoView, MAMapViewDelegate {
         overlayManager.updatePolygon(id: id, props: props)
     }
     
+    // MARK: - 图层控制
+    
     func setShowsTraffic(_ show: Bool) {
         showsTraffic = show
         uiManager.setShowsTraffic(show)
@@ -204,7 +261,6 @@ class ExpoGaodeMapView: ExpoView, MAMapViewDelegate {
     
     func setFollowUserLocation(_ follow: Bool) {
         followUserLocation = follow
-        // 如果定位已开启,立即应用新设置
         uiManager.setShowsUserLocation(showsUserLocation, followUser: follow)
     }
     
@@ -223,13 +279,29 @@ class ExpoGaodeMapView: ExpoView, MAMapViewDelegate {
         }
     }
     
+    /**
+     * 应用用户位置样式
+     */
     private func applyUserLocationStyle() {
         guard let config = userLocationRepresentation else { return }
         uiManager.setUserLocationRepresentation(config)
     }
+    
+    /**
+     * 析构函数 - 清理资源
+     */
+    deinit {
+        mapView?.delegate = nil
+        overlayManager?.clear()
+    }
 }
 
+// MARK: - MAMapViewDelegate
+
 extension ExpoGaodeMapView {
+    /**
+     * 地图加载完成回调
+     */
     public func mapViewDidFinishLoadingMap(_ mapView: MAMapView) {
         guard !isMapLoaded else { return }
         isMapLoaded = true
@@ -239,16 +311,25 @@ extension ExpoGaodeMapView {
         onLoad(["loaded": true])
     }
     
+    /**
+     * 地图单击事件
+     */
     public func mapView(_ mapView: MAMapView, didSingleTappedAt coordinate: CLLocationCoordinate2D) {
         onMapPress(["latitude": coordinate.latitude, "longitude": coordinate.longitude])
     }
     
+    /**
+     * 地图长按事件
+     */
     public func mapView(_ mapView: MAMapView, didLongPressedAt coordinate: CLLocationCoordinate2D) {
         onMapLongPress(["latitude": coordinate.latitude, "longitude": coordinate.longitude])
     }
     
+    /**
+     * 创建标注视图
+     * 定位蓝点返回 nil 使用系统默认样式
+     */
     public func mapView(_ mapView: MAMapView, viewFor annotation: MAAnnotation) -> MAAnnotationView? {
-        // 定位蓝点返回 nil,使用系统默认样式
         if annotation.isKind(of: MAUserLocation.self) {
             return nil
         }
@@ -265,8 +346,11 @@ extension ExpoGaodeMapView {
         return nil
     }
     
+    /**
+     * 创建覆盖物渲染器
+     * 优先使用子视图的渲染器,否则使用 OverlayManager 的渲染器
+     */
     public func mapView(_ mapView: MAMapView, rendererFor overlay: MAOverlay) -> MAOverlayRenderer {
-        // 首先检查是否是通过子视图添加的覆盖物
         for subview in subviews {
             if let circleView = subview as? CircleView, circleView.circle === overlay {
                 return circleView.getRenderer()
@@ -277,8 +361,6 @@ extension ExpoGaodeMapView {
             }
         }
         
-        // 否则使用 OverlayManager 的渲染器
         return overlayManager.getRenderer(for: overlay) ?? MAOverlayRenderer(overlay: overlay)
     }
 }
-

@@ -76,27 +76,73 @@ npx react-native run-android
 >
 > 对于 Expo 项目，使用 `npx expo prebuild` 生成原生代码后进行配置。
 
-### 2. 初始化 SDK
+### 2. 初始化和权限管理
+
+**推荐的初始化流程**：
 
 ```tsx
-import { useEffect } from 'react';
-import { initSDK } from 'expo-gaode-map';
+import { useEffect, useState } from 'react';
+import {
+  MapView,
+  initSDK,
+  checkLocationPermission,
+  requestLocationPermission,
+  getCurrentLocation,
+} from 'expo-gaode-map';
 
 export default function App() {
+  const [initialPosition, setInitialPosition] = useState(null);
+
   useEffect(() => {
-    initSDK({
-      androidKey: 'your-android-api-key',
-      iosKey: 'your-ios-api-key', // iOS 暂不支持
-    });
+    const initialize = async () => {
+      // 1. 初始化 SDK
+      initSDK({
+        androidKey: 'your-android-api-key',
+        iosKey: 'your-ios-api-key',
+      });
+      
+      // 2. 检查并请求权限
+      const status = await checkLocationPermission();
+      if (!status.granted) {
+        await requestLocationPermission();
+      }
+      
+      // 3. 获取位置并设置地图
+      try {
+        const location = await getCurrentLocation();
+        setInitialPosition({
+          target: { latitude: location.latitude, longitude: location.longitude },
+          zoom: 15
+        });
+      } catch (error) {
+        // 使用默认位置
+        setInitialPosition({
+          target: { latitude: 39.9, longitude: 116.4 },
+          zoom: 10
+        });
+      }
+    };
+    
+    initialize();
   }, []);
 
+  if (!initialPosition) return null;
+
   return (
-    // 你的应用内容
+    <MapView
+      style={{ flex: 1 }}
+      initialCameraPosition={initialPosition}
+      myLocationEnabled={true}
+    />
   );
 }
 ```
 
-### 3. 使用地图组件
+> 📖 **详细的初始化指南**: [INITIALIZATION.md](docs/INITIALIZATION.md)
+>
+> 包含完整的权限处理、错误处理和最佳实践。
+
+### 3. 基础地图使用
 
 ```tsx
 import { MapView } from 'expo-gaode-map';
@@ -151,6 +197,8 @@ export default function MapScreen() {
 
 - [API 文档](docs/API.md) - 完整的 API 参考
 - [使用示例](docs/EXAMPLES.md) - 详细的代码示例
+- [初始化指南](docs/INITIALIZATION.md) - SDK 初始化和权限管理
+- [架构文档](docs/ARCHITECTURE.md) - 项目结构和文件说明
 
 ## ⚠️ 注意事项
 

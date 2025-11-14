@@ -25,7 +25,6 @@ class CircleView(context: Context, appContext: AppContext) : ExpoView(context, a
    */
   @Suppress("unused")
   fun setMap(map: AMap) {
-    android.util.Log.d("CircleView", "setMap 被调用")
     aMap = map
     // 不立即创建，等 props 设置完成后再创建
   }
@@ -56,10 +55,8 @@ class CircleView(context: Context, appContext: AppContext) : ExpoView(context, a
    * 设置半径
    */
   fun setRadius(radiusValue: Double) {
-    android.util.Log.d("CircleView", "setRadius 被调用: $radiusValue")
     radius = radiusValue
     circle?.let {
-      android.util.Log.d("CircleView", "更新现有圆形的半径")
       it.radius = radius
     }
     // 半径可以后续更新，不需要在这里创建圆形
@@ -69,7 +66,6 @@ class CircleView(context: Context, appContext: AppContext) : ExpoView(context, a
    * 设置填充颜色
    */
   fun setFillColor(color: Int) {
-    android.util.Log.d("CircleView", "setFillColor 被调用: ${Integer.toHexString(color)}")
     circle?.let {
       it.fillColor = color
     }
@@ -79,7 +75,6 @@ class CircleView(context: Context, appContext: AppContext) : ExpoView(context, a
    * 设置边框颜色
    */
   fun setStrokeColor(color: Int) {
-    android.util.Log.d("CircleView", "setStrokeColor 被调用: ${Integer.toHexString(color)}")
     circle?.let {
       it.strokeColor = color
     }
@@ -89,7 +84,6 @@ class CircleView(context: Context, appContext: AppContext) : ExpoView(context, a
    * 设置边框宽度
    */
   fun setStrokeWidth(width: Float) {
-    android.util.Log.d("CircleView", "setStrokeWidth 被调用: $width")
     circle?.let {
       it.strokeWidth = width
     }

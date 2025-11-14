@@ -7,25 +7,33 @@ import expo.modules.gaodemap.modules.SDKInitializer
 import expo.modules.gaodemap.modules.LocationManager
 import expo.modules.gaodemap.overlays.*
 
+/**
+ * 高德地图 Expo 模块
+ * 
+ * 负责:
+ * - SDK 初始化和版本管理
+ * - 定位功能和配置
+ * - 权限管理
+ * - 地图视图和覆盖物注册
+ */
 class ExpoGaodeMapModule : Module() {
   companion object {
     private const val TAG = "ExpoGaodeMapModule"
   }
   
+  /** 定位管理器实例 */
   private var locationManager: LocationManager? = null
 
   override fun definition() = ModuleDefinition {
     Name("ExpoGaodeMap")
-    
-    Log.d(TAG, "ExpoGaodeMapModule 正在定义")
 
     // ==================== SDK 初始化 ====================
     
     /**
      * 初始化 SDK（地图 + 定位）
+     * @param config 配置对象,包含 androidKey
      */
     Function("initSDK") { config: Map<String, String> ->
-      Log.d(TAG, "initSDK 被调用")
       val androidKey = config["androidKey"]
       if (androidKey != null) {
         SDKInitializer.initSDK(appContext.reactContext!!, androidKey)
@@ -35,6 +43,7 @@ class ExpoGaodeMapModule : Module() {
 
     /**
      * 获取 SDK 版本
+     * @return SDK 版本号
      */
     Function("getVersion") {
       SDKInitializer.getVersion()
@@ -57,7 +66,8 @@ class ExpoGaodeMapModule : Module() {
     }
 
     /**
-     * 是否正在定位
+     * 检查是否正在定位
+     * @return 是否正在定位
      */
     AsyncFunction("isStarted") { promise: expo.modules.kotlin.Promise ->
       promise.resolve(getLocationManager().isStarted())
@@ -65,6 +75,7 @@ class ExpoGaodeMapModule : Module() {
 
     /**
      * 获取当前位置（单次定位）
+     * @return 位置信息对象
      */
     AsyncFunction("getCurrentLocation") { promise: expo.modules.kotlin.Promise ->
       getLocationManager().getCurrentLocation(promise)
@@ -72,6 +83,9 @@ class ExpoGaodeMapModule : Module() {
 
     /**
      * 坐标转换
+     * @param coordinate 原始坐标
+     * @param type 坐标类型
+     * @return 转换后的坐标
      */
     AsyncFunction("coordinateConvert") { coordinate: Map<String, Double>, type: Int, promise: expo.modules.kotlin.Promise ->
       getLocationManager().coordinateConvert(coordinate, type, promise)
@@ -81,6 +95,7 @@ class ExpoGaodeMapModule : Module() {
 
     /**
      * 设置是否返回逆地理信息
+     * @param isReGeocode 是否返回逆地理信息
      */
     Function("setLocatingWithReGeocode") { isReGeocode: Boolean ->
       getLocationManager().setLocatingWithReGeocode(isReGeocode)
@@ -88,6 +103,7 @@ class ExpoGaodeMapModule : Module() {
 
     /**
      * 设置定位模式
+     * @param mode 定位模式
      */
     Function("setLocationMode") { mode: Int ->
       getLocationManager().setLocationMode(mode)
@@ -95,6 +111,7 @@ class ExpoGaodeMapModule : Module() {
 
     /**
      * 设置定位间隔
+     * @param interval 间隔时间(毫秒)
      */
     Function("setInterval") { interval: Int ->
       getLocationManager().setInterval(interval)
@@ -102,6 +119,7 @@ class ExpoGaodeMapModule : Module() {
 
     /**
      * 设置是否单次定位
+     * @param isOnceLocation 是否单次定位
      */
     Function("setOnceLocation") { isOnceLocation: Boolean ->
       getLocationManager().setOnceLocation(isOnceLocation)
@@ -109,6 +127,7 @@ class ExpoGaodeMapModule : Module() {
 
     /**
      * 设置是否使用设备传感器
+     * @param sensorEnable 是否启用传感器
      */
     Function("setSensorEnable") { sensorEnable: Boolean ->
       getLocationManager().setSensorEnable(sensorEnable)
@@ -116,6 +135,7 @@ class ExpoGaodeMapModule : Module() {
 
     /**
      * 设置是否允许 WIFI 扫描
+     * @param wifiScan 是否允许 WIFI 扫描
      */
     Function("setWifiScan") { wifiScan: Boolean ->
       getLocationManager().setWifiScan(wifiScan)
@@ -123,6 +143,7 @@ class ExpoGaodeMapModule : Module() {
 
     /**
      * 设置是否 GPS 优先
+     * @param gpsFirst 是否 GPS 优先
      */
     Function("setGpsFirst") { gpsFirst: Boolean ->
       getLocationManager().setGpsFirst(gpsFirst)
@@ -130,6 +151,7 @@ class ExpoGaodeMapModule : Module() {
 
     /**
      * 设置是否等待 WIFI 列表刷新
+     * @param onceLocationLatest 是否等待刷新
      */
     Function("setOnceLocationLatest") { onceLocationLatest: Boolean ->
       getLocationManager().setOnceLocationLatest(onceLocationLatest)
@@ -137,6 +159,7 @@ class ExpoGaodeMapModule : Module() {
 
     /**
      * 设置逆地理语言
+     * @param language 语言代码
      */
     Function("setGeoLanguage") { language: String ->
       getLocationManager().setGeoLanguage(language)
@@ -144,6 +167,7 @@ class ExpoGaodeMapModule : Module() {
 
     /**
      * 设置是否使用缓存策略
+     * @param locationCacheEnable 是否启用缓存
      */
     Function("setLocationCacheEnable") { locationCacheEnable: Boolean ->
       getLocationManager().setLocationCacheEnable(locationCacheEnable)
@@ -151,11 +175,92 @@ class ExpoGaodeMapModule : Module() {
 
     /**
      * 设置网络请求超时时间
+     * @param httpTimeOut 超时时间(毫秒)
      */
     Function("setHttpTimeOut") { httpTimeOut: Int ->
       getLocationManager().setHttpTimeOut(httpTimeOut)
     }
 
+    // ==================== 权限管理 ====================
+    
+    /**
+     * 检查位置权限状态
+     * @return 权限状态对象
+     */
+    AsyncFunction("checkLocationPermission") { promise: expo.modules.kotlin.Promise ->
+      val context = appContext.reactContext!!
+      val fineLocation = android.Manifest.permission.ACCESS_FINE_LOCATION
+      val coarseLocation = android.Manifest.permission.ACCESS_COARSE_LOCATION
+      
+      val hasFine = androidx.core.content.ContextCompat.checkSelfPermission(context, fineLocation) ==
+        android.content.pm.PackageManager.PERMISSION_GRANTED
+      val hasCoarse = androidx.core.content.ContextCompat.checkSelfPermission(context, coarseLocation) ==
+        android.content.pm.PackageManager.PERMISSION_GRANTED
+      
+      promise.resolve(mapOf(
+        "granted" to (hasFine && hasCoarse),
+        "fineLocation" to hasFine,
+        "coarseLocation" to hasCoarse
+      ))
+    }
+    
+    /**
+     * 请求位置权限
+     * 注意: Android 权限请求是异步的,使用轮询方式检查权限状态
+     * @return 权限请求结果
+     */
+    AsyncFunction("requestLocationPermission") { promise: expo.modules.kotlin.Promise ->
+      val activity = appContext.currentActivity
+      if (activity == null) {
+        promise.reject("NO_ACTIVITY", "Activity not available", null)
+        return@AsyncFunction
+      }
+      
+      val permissions = arrayOf(
+        android.Manifest.permission.ACCESS_FINE_LOCATION,
+        android.Manifest.permission.ACCESS_COARSE_LOCATION
+      )
+      
+      androidx.core.app.ActivityCompat.requestPermissions(activity, permissions, 1001)
+      
+      // 使用 WeakReference 避免内存泄露
+      val contextRef = java.lang.ref.WeakReference(appContext.reactContext)
+      val handler = android.os.Handler(android.os.Looper.getMainLooper())
+      var attempts = 0
+      val maxAttempts = 30 // 3 秒 / 100ms
+      
+      val checkPermission = object : Runnable {
+        override fun run() {
+          val context = contextRef.get()
+          if (context == null) {
+            promise.reject("CONTEXT_LOST", "Context was garbage collected", null)
+            return
+          }
+          
+          val hasFine = androidx.core.content.ContextCompat.checkSelfPermission(
+            context, android.Manifest.permission.ACCESS_FINE_LOCATION
+          ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+          val hasCoarse = androidx.core.content.ContextCompat.checkSelfPermission(
+            context, android.Manifest.permission.ACCESS_COARSE_LOCATION
+          ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+          
+          // 如果权限已授予或达到最大尝试次数,返回结果并清理 Handler
+          if ((hasFine && hasCoarse) || attempts >= maxAttempts) {
+            handler.removeCallbacks(this)
+            promise.resolve(mapOf(
+              "granted" to (hasFine && hasCoarse),
+              "fineLocation" to hasFine,
+              "coarseLocation" to hasCoarse
+            ))
+          } else {
+            attempts++
+            handler.postDelayed(this, 100)
+          }
+        }
+      }
+      
+      handler.postDelayed(checkPermission, 100)
+    }
 
     // ==================== 事件 ====================
 
@@ -164,21 +269,18 @@ class ExpoGaodeMapModule : Module() {
     // ==================== 视图定义 ====================
 
     View(ExpoGaodeMapView::class) {
-      Log.d(TAG, "正在注册 ExpoGaodeMapView 视图")
       
-      // 事件 - 使用 Expo Modules 的事件命名约定
+      // 事件
       Events("onMapPress", "onMapLongPress", "onLoad")
 
-      // 地图类型 - 使用泛型语法
+      // 地图类型
       Prop<Int>("mapType") { view, type ->
-        Log.d(TAG, "✅ Prop mapType 被调用: $type")
         view.mapType = type
         view.setMapType(type)
       }
 
-      // 初始相机位置 - 使用泛型语法
+      // 初始相机位置
       Prop<Map<String, Any?>?>("initialCameraPosition") { view, position ->
-        Log.d(TAG, "✅ Prop initialCameraPosition 被调用: $position")
         view.initialCameraPosition = position
         position?.let { view.setInitialCameraPosition(it) }
       }
@@ -208,24 +310,18 @@ class ExpoGaodeMapModule : Module() {
       Prop<Boolean>("buildingsEnabled") { view, show -> view.setShowsBuildings(show) }
       Prop<Boolean>("indoorViewEnabled") { view, show -> view.setShowsIndoorMap(show) }
 
-      // 生命周期方法 - 在这里手动应用 Props
+      // 生命周期方法
       OnViewDidUpdateProps { view: ExpoGaodeMapView ->
-        Log.d(TAG, "🎯 OnViewDidUpdateProps 被调用")
-        Log.d(TAG, "当前 mapType: ${view.mapType}")
-        Log.d(TAG, "当前 initialCameraPosition: ${view.initialCameraPosition}")
-        
-        // 手动应用 Props
         if (view.mapType != 0) {
-          Log.d(TAG, "应用 mapType: ${view.mapType}")
           view.setMapType(view.mapType)
         }
         
         view.initialCameraPosition?.let { position ->
-          Log.d(TAG, "应用 initialCameraPosition: $position")
           view.setInitialCameraPosition(position)
         }
       }
 
+      // 相机控制方法
       AsyncFunction("moveCamera") { view: ExpoGaodeMapView, position: Map<String, Any>, duration: Int ->
         view.moveCamera(position, duration)
       }
@@ -246,6 +342,7 @@ class ExpoGaodeMapModule : Module() {
         view.getCameraPosition()
       }
       
+      // Circle 命令
       AsyncFunction("addCircle") { view: ExpoGaodeMapView, id: String, props: Map<String, Any> ->
         view.addCircle(id, props)
       }
@@ -258,6 +355,7 @@ class ExpoGaodeMapModule : Module() {
         view.updateCircle(id, props)
       }
       
+      // Marker 命令
       AsyncFunction("addMarker") { view: ExpoGaodeMapView, id: String, props: Map<String, Any> ->
         view.addMarker(id, props)
       }
@@ -285,17 +383,14 @@ class ExpoGaodeMapModule : Module() {
       
       // Polygon 命令
       AsyncFunction("addPolygon") { view: ExpoGaodeMapView, id: String, props: Map<String, Any> ->
-        Log.d(TAG, "🔷 Module addPolygon 被调用: id=$id, props=$props")
         view.addPolygon(id, props)
       }
       
       AsyncFunction("removePolygon") { view: ExpoGaodeMapView, id: String ->
-        Log.d(TAG, "🗑️ Module removePolygon 被调用: id=$id")
         view.removePolygon(id)
       }
       
       AsyncFunction("updatePolygon") { view: ExpoGaodeMapView, id: String, props: Map<String, Any> ->
-        Log.d(TAG, "🔄 Module updatePolygon 被调用: id=$id, props=$props")
         view.updatePolygon(id, props)
       }
     }
@@ -328,27 +423,22 @@ class ExpoGaodeMapModule : Module() {
       Events("onPress")
       
       Prop<Map<String, Double>>("center") { view, center ->
-        Log.d(TAG, "✅ Prop center 被调用: $center")
         view.setCenter(center)
       }
       
       Prop<Double>("radius") { view, radius ->
-        Log.d(TAG, "✅ Prop radius 被调用: $radius")
         view.setRadius(radius)
       }
       
       Prop<Int>("fillColor") { view, color ->
-        Log.d(TAG, "✅ Prop fillColor 被调用: $color")
         view.setFillColor(color)
       }
       
       Prop<Int>("strokeColor") { view, color ->
-        Log.d(TAG, "✅ Prop strokeColor 被调用: $color")
         view.setStrokeColor(color)
       }
       
       Prop<Float>("strokeWidth") { view, width ->
-        Log.d(TAG, "✅ Prop strokeWidth 被调用: $width")
         view.setStrokeWidth(width)
       }
     }
@@ -444,6 +534,7 @@ class ExpoGaodeMapModule : Module() {
 
   /**
    * 获取或创建定位管理器
+   * @return 定位管理器实例
    */
   private fun getLocationManager(): LocationManager {
     if (locationManager == null) {

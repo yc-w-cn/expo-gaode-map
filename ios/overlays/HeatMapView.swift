@@ -1,12 +1,25 @@
 import ExpoModulesCore
 import MAMapKit
 
+/**
+ * 热力图视图
+ * 
+ * 负责:
+ * - 在地图上显示热力图
+ * - 管理热力图数据和样式
+ * - 支持半径和透明度配置
+ */
 class HeatMapView: ExpoView {
+    /// 热力图数据点数组
     var data: [[String: Any]] = []
+    /// 热力图半径
     var radius: Int = 50
+    /// 透明度
     var opacity: Double = 0.6
     
+    /// 地图视图弱引用
     private var mapView: MAMapView?
+    /// 热力图图层
     private var heatmapOverlay: MAHeatMapTileOverlay?
     
     required init(appContext: AppContext? = nil) {
@@ -15,6 +28,7 @@ class HeatMapView: ExpoView {
     
     /**
      * 设置地图实例
+     * @param map 地图视图
      */
     func setMap(_ map: MAMapView) {
         self.mapView = map
@@ -23,6 +37,7 @@ class HeatMapView: ExpoView {
     
     /**
      * 设置热力图数据
+     * @param data 数据点数组，每个点包含 latitude、longitude
      */
     func setData(_ data: [[String: Any]]) {
         self.data = data
@@ -31,6 +46,7 @@ class HeatMapView: ExpoView {
     
     /**
      * 设置热力图半径
+     * @param radius 半径值(像素)
      */
     func setRadius(_ radius: Int) {
         self.radius = radius
@@ -39,6 +55,7 @@ class HeatMapView: ExpoView {
     
     /**
      * 设置透明度
+     * @param opacity 透明度值 (0.0-1.0)
      */
     func setOpacity(_ opacity: Double) {
         self.opacity = opacity
@@ -91,8 +108,18 @@ class HeatMapView: ExpoView {
         heatmapOverlay = nil
     }
     
+    /**
+     * 从父视图移除时清理热力图
+     */
     override func removeFromSuperview() {
         super.removeFromSuperview()
+        removeHeatMap()
+    }
+    
+    /**
+     * 析构时移除热力图
+     */
+    deinit {
         removeHeatMap()
     }
 }

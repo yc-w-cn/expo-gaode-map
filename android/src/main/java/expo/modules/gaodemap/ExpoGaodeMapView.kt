@@ -14,6 +14,15 @@ import expo.modules.gaodemap.managers.UIManager
 import expo.modules.gaodemap.managers.OverlayManager
 import expo.modules.gaodemap.overlays.*
 
+/**
+ * 高德地图视图组件
+ * 
+ * 负责:
+ * - 地图视图的创建和管理
+ * - 地图事件的派发
+ * - 相机控制和覆盖物管理
+ * - 生命周期管理
+ */
 @Suppress("ViewConstructor")
 class ExpoGaodeMapView(context: Context, appContext: AppContext) : ExpoView(context, appContext) {
   
@@ -22,11 +31,14 @@ class ExpoGaodeMapView(context: Context, appContext: AppContext) : ExpoView(cont
   }
   
   // Props 存储
+  /** 地图类型 */
   internal var mapType: Int = 0
+  /** 初始相机位置 */
   internal var initialCameraPosition: Map<String, Any?>? = null
+  /** 是否跟随用户位置 */
   internal var followUserLocation: Boolean = false
   
-  // Handler for posting to main thread
+  /** 主线程 Handler */
   private val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
   
   // 事件派发器
@@ -48,56 +60,44 @@ class ExpoGaodeMapView(context: Context, appContext: AppContext) : ExpoView(cont
   private var isMapLoaded = false
   
   init {
-    Log.d(TAG, "ExpoGaodeMapView 初始化开始")
-    
     try {
       // 确保隐私合规已设置
       MapsInitializer.updatePrivacyShow(context, true, true)
       MapsInitializer.updatePrivacyAgree(context, true)
-      Log.d(TAG, "地图隐私合规已确认")
       
       // 创建地图视图
       mapView = MapView(context)
       mapView.onCreate(null)
       aMap = mapView.map
-      Log.d(TAG, "MapView 创建成功")
       
       // 初始化管理器
       cameraManager = CameraManager(aMap)
       uiManager = UIManager(aMap, context)
       overlayManager = OverlayManager(aMap)
-      Log.d(TAG, "管理器初始化完成")
       
       // 添加地图视图到布局
       addView(mapView, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
-      Log.d(TAG, "MapView 已添加到布局")
       
       // 设置地图事件监听
       setupMapListeners()
-      Log.d(TAG, "地图事件监听已设置")
       
       // 地图加载完成回调
       aMap.setOnMapLoadedListener {
-        Log.d(TAG, "🎉 地图加载完成")
         isMapLoaded = true
         
         // 应用缓存的 Props
         if (mapType != 0) {
-          Log.d(TAG, "应用 mapType: $mapType")
           setMapType(mapType)
         }
         
         val positionToApply = initialCameraPosition ?: pendingCameraPosition
         positionToApply?.let { position ->
-          Log.d(TAG, "应用初始相机位置")
           applyInitialCameraPosition(position)
           pendingCameraPosition = null
         }
         
         onLoad(mapOf("loaded" to true))
       }
-      
-      Log.d(TAG, "ExpoGaodeMapView 初始化完成")
     } catch (e: Exception) {
       Log.e(TAG, "ExpoGaodeMapView 初始化失败", e)
     }
@@ -126,166 +126,217 @@ class ExpoGaodeMapView(context: Context, appContext: AppContext) : ExpoView(cont
   
   /**
    * 设置地图类型
+   * @param type 地图类型
    */
   fun setMapType(type: Int) {
-    Log.d(TAG, "🎯 setMapType: $type")
     mainHandler.post {
       uiManager.setMapType(type)
-      Log.d(TAG, "✅ setMapType 完成")
     }
   }
   
   /**
    * 设置初始相机位置
+   * @param position 相机位置配置
    */
   fun setInitialCameraPosition(position: Map<String, Any?>) {
-    Log.d(TAG, "🎯 setInitialCameraPosition")
-    mainHandler.post {
-      applyInitialCameraPosition(position)
+    initialCameraPosition = position
+    
+    // 如果地图已加载,立即应用;否则缓存等待地图加载完成
+    if (isMapLoaded) {
+      mainHandler.post {
+        applyInitialCameraPosition(position)
+      }
+    } else {
+      pendingCameraPosition = position
     }
   }
   
   /**
    * 实际应用相机位置
+   * @param position 相机位置配置
    */
   private fun applyInitialCameraPosition(position: Map<String, Any?>) {
     cameraManager.setInitialCameraPosition(position)
-    Log.d(TAG, "相机位置设置完成")
   }
   
   // ==================== UI 控件和手势 ====================
   
+  /** 设置是否显示缩放控件 */
   fun setShowsZoomControls(show: Boolean) = uiManager.setShowsZoomControls(show)
+  /** 设置是否显示指南针 */
   fun setShowsCompass(show: Boolean) = uiManager.setShowsCompass(show)
+  /** 设置是否显示比例尺 */
   fun setShowsScale(show: Boolean) = uiManager.setShowsScale(show)
   
+  /** 设置是否启用缩放手势 */
   fun setZoomEnabled(enabled: Boolean) = uiManager.setZoomEnabled(enabled)
+  /** 设置是否启用滚动手势 */
   fun setScrollEnabled(enabled: Boolean) = uiManager.setScrollEnabled(enabled)
+  /** 设置是否启用旋转手势 */
   fun setRotateEnabled(enabled: Boolean) = uiManager.setRotateEnabled(enabled)
+  /** 设置是否启用倾斜手势 */
   fun setTiltEnabled(enabled: Boolean) = uiManager.setTiltEnabled(enabled)
   
+  /** 设置最大缩放级别 */
   fun setMaxZoom(maxZoom: Float) = cameraManager.setMaxZoomLevel(maxZoom)
+  /** 设置最小缩放级别 */
   fun setMinZoom(minZoom: Float) = cameraManager.setMinZoomLevel(minZoom)
   
+  /** 设置是否显示用户位置 */
   fun setShowsUserLocation(show: Boolean) = uiManager.setShowsUserLocation(show, followUserLocation)
   
+  /**
+   * 设置是否跟随用户位置
+   * @param follow 是否跟随
+   */
   fun setFollowUserLocation(follow: Boolean) {
     followUserLocation = follow
     // 如果定位已开启，立即应用新设置
     uiManager.setShowsUserLocation(true, follow)
   }
   
+  /**
+   * 设置用户位置样式
+   * @param representation 样式配置
+   */
   fun setUserLocationRepresentation(representation: Map<String, Any>) {
     uiManager.setUserLocationRepresentation(representation)
   }
   
+  /** 设置是否显示交通路况 */
   fun setShowsTraffic(show: Boolean) = uiManager.setShowsTraffic(show)
+  /** 设置是否显示建筑物 */
   fun setShowsBuildings(show: Boolean) = uiManager.setShowsBuildings(show)
+  /** 设置是否显示室内地图 */
   fun setShowsIndoorMap(show: Boolean) = uiManager.setShowsIndoorMap(show)
   
   // ==================== 相机控制方法 ====================
   
+  /**
+   * 移动相机
+   * @param position 目标位置
+   * @param duration 动画时长(毫秒)
+   */
   fun moveCamera(position: Map<String, Any>, duration: Int) {
     cameraManager.moveCamera(position, duration)
   }
   
+  /**
+   * 获取屏幕坐标对应的地理坐标
+   * @param point 屏幕坐标
+   * @return 地理坐标
+   */
   fun getLatLng(point: Map<String, Double>): Map<String, Double> {
     return cameraManager.getLatLng(point)
   }
   
+  /**
+   * 设置地图中心点
+   * @param center 中心点坐标
+   * @param animated 是否动画
+   */
   fun setCenter(center: Map<String, Double>, animated: Boolean) {
     cameraManager.setCenter(center, animated)
   }
   
+  /**
+   * 设置地图缩放级别
+   * @param zoom 缩放级别
+   * @param animated 是否动画
+   */
   fun setZoomLevel(zoom: Float, animated: Boolean) {
     cameraManager.setZoomLevel(zoom, animated)
   }
   
+  /**
+   * 获取当前相机位置
+   * @return 相机位置信息
+   */
   fun getCameraPosition(): Map<String, Any> {
     return cameraManager.getCameraPosition()
   }
   
   // ==================== 覆盖物管理 ====================
   
+  /** 添加圆形覆盖物 */
   fun addCircle(id: String, props: Map<String, Any>) {
-    Log.d(TAG, "🔵 addCircle: id=$id")
     mainHandler.post {
       overlayManager.addCircle(id, props)
     }
   }
   
+  /** 移除圆形覆盖物 */
   fun removeCircle(id: String) {
-    Log.d(TAG, "🔴 removeCircle: id=$id")
     mainHandler.post {
       overlayManager.removeCircle(id)
     }
   }
   
+  /** 更新圆形覆盖物 */
   fun updateCircle(id: String, props: Map<String, Any>) {
-    Log.d(TAG, "🔄 updateCircle: id=$id")
     mainHandler.post {
       overlayManager.updateCircle(id, props)
     }
   }
   
+  /** 添加标记点 */
   fun addMarker(id: String, props: Map<String, Any>) {
-    Log.d(TAG, "📍 addMarker: id=$id")
     mainHandler.post {
       overlayManager.addMarker(id, props)
     }
   }
   
+  /** 移除标记点 */
   fun removeMarker(id: String) {
-    Log.d(TAG, "🗑️ removeMarker: id=$id")
     mainHandler.post {
       overlayManager.removeMarker(id)
     }
   }
   
+  /** 更新标记点 */
   fun updateMarker(id: String, props: Map<String, Any>) {
-    Log.d(TAG, "🔄 updateMarker: id=$id")
     mainHandler.post {
       overlayManager.updateMarker(id, props)
     }
   }
   
+  /** 添加折线 */
   fun addPolyline(id: String, props: Map<String, Any>) {
-    Log.d(TAG, "📏 addPolyline: id=$id")
     mainHandler.post {
       overlayManager.addPolyline(id, props)
     }
   }
   
+  /** 移除折线 */
   fun removePolyline(id: String) {
-    Log.d(TAG, "🗑️ removePolyline: id=$id")
     mainHandler.post {
       overlayManager.removePolyline(id)
     }
   }
   
+  /** 更新折线 */
   fun updatePolyline(id: String, props: Map<String, Any>) {
-    Log.d(TAG, "🔄 updatePolyline: id=$id")
     mainHandler.post {
       overlayManager.updatePolyline(id, props)
     }
   }
   
+  /** 添加多边形 */
   fun addPolygon(id: String, props: Map<String, Any>) {
-    Log.d(TAG, "🔷 addPolygon: id=$id")
     mainHandler.post {
       overlayManager.addPolygon(id, props)
     }
   }
   
+  /** 移除多边形 */
   fun removePolygon(id: String) {
-    Log.d(TAG, "🗑️ removePolygon: id=$id")
     mainHandler.post {
       overlayManager.removePolygon(id)
     }
   }
   
+  /** 更新多边形 */
   fun updatePolygon(id: String, props: Map<String, Any>) {
-    Log.d(TAG, "🔄 updatePolygon: id=$id")
     mainHandler.post {
       overlayManager.updatePolygon(id, props)
     }
@@ -293,22 +344,37 @@ class ExpoGaodeMapView(context: Context, appContext: AppContext) : ExpoView(cont
   
   // ==================== 生命周期方法 ====================
   
+  /** 恢复地图 */
   @Suppress("unused")
   fun onResume() {
     mapView.onResume()
   }
   
+  /** 暂停地图 */
   @Suppress("unused")
   fun onPause() {
     mapView.onPause()
   }
   
+  /** 销毁地图 */
   @Suppress("unused")
   fun onDestroy() {
+    // 清理 Handler 回调,防止内存泄露
+    mainHandler.removeCallbacksAndMessages(null)
+    
+    // 清理地图监听器
+    aMap.setOnMapClickListener(null)
+    aMap.setOnMapLongClickListener(null)
+    aMap.setOnMapLoadedListener(null)
+    
+    // 清理覆盖物
     overlayManager.clear()
+    
+    // 销毁地图
     mapView.onDestroy()
   }
   
+  /** 保存实例状态 */
   @Suppress("unused")
   fun onSaveInstanceState(outState: android.os.Bundle) {
     mapView.onSaveInstanceState(outState)
@@ -318,7 +384,6 @@ class ExpoGaodeMapView(context: Context, appContext: AppContext) : ExpoView(cont
    * 添加子视图时自动连接到地图
    */
   override fun addView(child: View?, index: Int) {
-    Log.d(TAG, "addView - child: ${child?.javaClass?.simpleName}")
     super.addView(child, index)
     
     // 自动将地图实例传递给覆盖物子视图
@@ -331,15 +396,11 @@ class ExpoGaodeMapView(context: Context, appContext: AppContext) : ExpoView(cont
         is HeatMapView -> it.setMap(aMap)
         is MultiPointView -> it.setMap(aMap)
         is ClusterView -> it.setMap(aMap)
-        else -> Log.d(TAG, "未识别的子视图类型: ${it.javaClass.name}")
       }
     }
   }
   
   override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
     super.onLayout(changed, left, top, right, bottom)
-    if (changed) {
-      Log.d(TAG, "onLayout - bounds: ($left,$top,$right,$bottom)")
-    }
   }
 }

@@ -2,7 +2,7 @@
  * @Author       : 尚博信_王强 wangqiang03@sunboxsoft.com
  * @Date         : 2025-11-13 14:03:56
  * @LastEditors  : 尚博信_王强 wangqiang03@sunboxsoft.com
- * @LastEditTime : 2025-11-13 19:35:20
+ * @LastEditTime : 2025-11-15 01:50:18
  * @FilePath     : /expo-gaode-map/src/ExpoGaodeMapView.tsx
  * @Description  : 高德地图视图组件
  * 
@@ -62,7 +62,7 @@ const ExpoGaodeMapView = React.forwardRef<MapViewRef, MapViewProps>((props, ref)
   const internalRef = React.useRef<MapViewRef | null>(null);
 
   const apiRef: MapViewRef = React.useMemo(() => ({
-    moveCamera: async (position: CameraPosition, duration: number = 0) => {
+    moveCamera: async (position: CameraPosition, duration: number = 300) => {
       if (!nativeRef.current) throw new Error('MapView not initialized');
       return nativeRef.current.moveCamera(position, duration);
     },

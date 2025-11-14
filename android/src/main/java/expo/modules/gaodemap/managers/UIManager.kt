@@ -126,7 +126,6 @@ class UIManager(private val aMap: AMap, private val context: Context) {
     
     // 自定义图标 (image)
     (config["image"] as? String)?.let { imagePath ->
-      android.util.Log.d("UIManager", "设置定位图标: $imagePath")
       
       // 将 dp 转换为 px (与 iOS points 对应)
       val density = context.resources.displayMetrics.density
@@ -144,7 +143,6 @@ class UIManager(private val aMap: AMap, private val context: Context) {
                   android.graphics.Bitmap.createScaledBitmap(bitmap, imageWidth, imageHeight, true)
                 } else bitmap
                 
-                android.util.Log.d("UIManager", "网络图片加载成功")
                 style.myLocationIcon(BitmapDescriptorFactory.fromBitmap(scaledBitmap))
                 aMap.myLocationStyle = style
               } ?: android.util.Log.e("UIManager", "网络图片加载失败")
@@ -154,34 +152,39 @@ class UIManager(private val aMap: AMap, private val context: Context) {
           }
         }.start()
       } else {
-        try {
-          val originalBitmap = when {
-            imagePath.startsWith("file://") -> {
-              BitmapFactory.decodeFile(imagePath.substring(7))
+        // 本地图片也在后台线程加载,避免阻塞主线程
+        Thread {
+          try {
+            val originalBitmap = when {
+              imagePath.startsWith("file://") -> {
+                BitmapFactory.decodeFile(imagePath.substring(7))
+              }
+              else -> {
+                val resId = context.resources.getIdentifier(
+                  imagePath.substringBeforeLast('.'),
+                  "drawable",
+                  context.packageName
+                )
+                if (resId != 0) {
+                  BitmapFactory.decodeResource(context.resources, resId)
+                } else null
+              }
             }
-            else -> {
-              val resId = context.resources.getIdentifier(
-                imagePath.substringBeforeLast('.'),
-                "drawable",
-                context.packageName
-              )
-              if (resId != 0) {
-                BitmapFactory.decodeResource(context.resources, resId)
-              } else null
-            }
-          }
-          
-          originalBitmap?.let { bitmap ->
-            val scaledBitmap = if (imageWidth != null && imageHeight != null) {
-              android.graphics.Bitmap.createScaledBitmap(bitmap, imageWidth, imageHeight, true)
-            } else bitmap
             
-            android.util.Log.d("UIManager", "本地图片加载成功")
-            style.myLocationIcon(BitmapDescriptorFactory.fromBitmap(scaledBitmap))
-          } ?: android.util.Log.e("UIManager", "本地图片加载失败")
-        } catch (e: Exception) {
-          android.util.Log.e("UIManager", "加载本地图片异常", e)
-        }
+            android.os.Handler(android.os.Looper.getMainLooper()).post {
+              originalBitmap?.let { bitmap ->
+                val scaledBitmap = if (imageWidth != null && imageHeight != null) {
+                  android.graphics.Bitmap.createScaledBitmap(bitmap, imageWidth, imageHeight, true)
+                } else bitmap
+                
+                style.myLocationIcon(BitmapDescriptorFactory.fromBitmap(scaledBitmap))
+                aMap.myLocationStyle = style
+              } ?: android.util.Log.e("UIManager", "本地图片加载失败")
+            }
+          } catch (e: Exception) {
+            android.util.Log.e("UIManager", "加载本地图片异常", e)
+          }
+        }.start()
       }
     }
     

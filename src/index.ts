@@ -2,7 +2,7 @@
  * @Author       : 尚博信_王强 wangqiang03@sunboxsoft.com
  * @Date         : 2025-11-13 14:45:15
  * @LastEditors  : 尚博信_王强 wangqiang03@sunboxsoft.com
- * @LastEditTime : 2025-11-14 16:15:52
+ * @LastEditTime : 2025-11-15 02:21:17
  * @FilePath     : /expo-gaode-map/src/index.ts
  * @Description  : 高德地图 Expo Module 主导出文件
  * 
@@ -32,6 +32,14 @@ export {
   startUpdatingHeading,
   stopUpdatingHeading,
 } from './modules/AMapLocation';
+
+// 导出权限管理模块
+export {
+  default as AMapPermissions,
+  checkLocationPermission,
+  requestLocationPermission,
+} from './modules/AMapPermissions';
+export type { PermissionStatus } from './modules/AMapPermissions';
 
 // 地图视图控制已移至 MapView 的 ref 调用
 // 使用方式: const mapRef = useRef<MapViewRef>(null); mapRef.current.moveCamera() 等

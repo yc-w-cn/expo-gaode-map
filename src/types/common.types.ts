@@ -112,6 +112,7 @@ export enum MapType {
 
   /**
    * 公交地图
+   * @platform android
    */
   Bus = 4,
 }

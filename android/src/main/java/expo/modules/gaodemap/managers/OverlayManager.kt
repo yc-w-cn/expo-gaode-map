@@ -27,7 +27,6 @@ class OverlayManager(private val aMap: AMap) {
   // ==================== 圆形覆盖物 ====================
   
   fun addCircle(id: String, props: Map<String, Any>) {
-    Log.d(TAG, "🔵 addCircle: id=$id")
     
     @Suppress("UNCHECKED_CAST")
     val center = props["center"] as? Map<String, Double>
@@ -50,7 +49,6 @@ class OverlayManager(private val aMap: AMap) {
       
       val circle = aMap.addCircle(options)
       circles[id] = circle
-      Log.d(TAG, "✅ 圆形创建成功")
     }
   }
   
@@ -58,7 +56,6 @@ class OverlayManager(private val aMap: AMap) {
     circles[id]?.let { circle ->
       circle.remove()
       circles.remove(id)
-      Log.d(TAG, "✅ 圆形已移除: $id")
     }
   }
   
@@ -81,15 +78,12 @@ class OverlayManager(private val aMap: AMap) {
       fillColor?.let { circle.fillColor = it }
       strokeColor?.let { circle.strokeColor = it }
       strokeWidth?.let { circle.strokeWidth = it }
-      
-      Log.d(TAG, "✅ 圆形已更新: $id")
     }
   }
   
   // ==================== 标记点 ====================
   
   fun addMarker(id: String, props: Map<String, Any>) {
-    Log.d(TAG, "📍 addMarker: id=$id")
     
     @Suppress("UNCHECKED_CAST")
     val position = props["position"] as? Map<String, Double>
@@ -114,7 +108,6 @@ class OverlayManager(private val aMap: AMap) {
       }
       
       markers[id] = marker
-      Log.d(TAG, "✅ 标记点创建成功")
     }
   }
   
@@ -122,7 +115,6 @@ class OverlayManager(private val aMap: AMap) {
     markers[id]?.let { marker ->
       marker.remove()
       markers.remove(id)
-      Log.d(TAG, "✅ 标记点已移除: $id")
     }
   }
   
@@ -141,24 +133,21 @@ class OverlayManager(private val aMap: AMap) {
       
       title?.let { marker.title = it }
       draggable?.let { marker.isDraggable = it }
-      
-      Log.d(TAG, "✅ 标记点已更新: $id")
     }
   }
   
   // ==================== 折线 ====================
   
   fun addPolyline(id: String, props: Map<String, Any>) {
-    Log.d(TAG, "📏 addPolyline: id=$id")
     
     @Suppress("UNCHECKED_CAST")
     val points = props["points"] as? List<Map<String, Double>>
-    val width = (props["width"] as? Number)?.toFloat() ?: 10f
+    val width = (props["strokeWidth"] as? Number)?.toFloat() ?: 10f
     val texture = props["texture"] as? String
     val color = if (!texture.isNullOrEmpty()) {
       android.graphics.Color.TRANSPARENT
     } else {
-      ColorParser.parseColor(props["color"])
+      ColorParser.parseColor(props["strokeColor"])
     }
     
     if (points != null && points.size >= 2) {
@@ -199,7 +188,6 @@ class OverlayManager(private val aMap: AMap) {
       }
       
       polylines[id] = polyline
-      Log.d(TAG, "✅ 折线创建成功")
     }
   }
   
@@ -207,7 +195,6 @@ class OverlayManager(private val aMap: AMap) {
     polylines[id]?.let { polyline ->
       polyline.remove()
       polylines.remove(id)
-      Log.d(TAG, "✅ 折线已移除: $id")
     }
   }
   
@@ -215,8 +202,8 @@ class OverlayManager(private val aMap: AMap) {
     polylines[id]?.let { polyline ->
       @Suppress("UNCHECKED_CAST")
       val points = props["points"] as? List<Map<String, Double>>
-      val width = (props["width"] as? Number)?.toFloat()
-      val color = props["color"]?.let { ColorParser.parseColor(it) }
+      val width = (props["strokeWidth"] as? Number)?.toFloat()
+      val color = props["strokeColor"]?.let { ColorParser.parseColor(it) }
       
       points?.let {
         val latLngs = it.map { point ->
@@ -229,15 +216,12 @@ class OverlayManager(private val aMap: AMap) {
       
       width?.let { polyline.width = it }
       color?.let { polyline.color = it }
-      
-      Log.d(TAG, "✅ 折线已更新: $id")
     }
   }
   
   // ==================== 多边形 ====================
   
   fun addPolygon(id: String, props: Map<String, Any>) {
-    Log.d(TAG, "🔷 addPolygon: id=$id")
     
     @Suppress("UNCHECKED_CAST")
     val points = props["points"] as? List<Map<String, Double>>
@@ -271,7 +255,6 @@ class OverlayManager(private val aMap: AMap) {
     polygons[id]?.let { polygon ->
       polygon.remove()
       polygons.remove(id)
-      Log.d(TAG, "✅ 多边形已移除: $id")
     }
   }
   
@@ -298,8 +281,6 @@ class OverlayManager(private val aMap: AMap) {
       strokeColor?.let { polygon.strokeColor = it }
       strokeWidth?.let { polygon.strokeWidth = it }
       zIndex?.let { polygon.zIndex = it }
-      
-      Log.d(TAG, "✅ 多边形已更新: $id")
     }
   }
   

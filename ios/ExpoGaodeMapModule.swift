@@ -3,47 +3,81 @@ import AMapFoundationKit
 import AMapLocationKit
 import MAMapKit
 
+/**
+ * 高德地图 Expo 模块
+ *
+ * 负责:
+ * - SDK 初始化和配置
+ * - 定位功能管理
+ * - 权限管理
+ * - 地图视图和覆盖物注册
+ */
 public class ExpoGaodeMapModule: Module {
+    /// 定位管理器实例
     private var locationManager: LocationManager?
+    /// 权限管理器实例
+    private var permissionManager: PermissionManager?
     
     public func definition() -> ModuleDefinition {
         Name("ExpoGaodeMap")
         
+        // 模块初始化时设置隐私合规
+        OnCreate {
+            MAMapView.updatePrivacyAgree(AMapPrivacyAgreeStatus.didAgree)
+            MAMapView.updatePrivacyShow(AMapPrivacyShowStatus.didShow, privacyInfo: AMapPrivacyInfoStatus.didContain)
+        }
+        
         // ==================== SDK 初始化 ====================
         
+        /**
+         * 初始化高德地图 SDK
+         * @param config 配置字典,包含 iosKey
+         */
         Function("initSDK") { (config: [String: String]) in
             guard let iosKey = config["iosKey"] else { return }
             AMapServices.shared().apiKey = iosKey
             AMapServices.shared().enableHTTPS = true
-            MAMapView.updatePrivacyAgree(AMapPrivacyAgreeStatus.didAgree)
-            MAMapView.updatePrivacyShow(AMapPrivacyShowStatus.didShow, privacyInfo: AMapPrivacyInfoStatus.didContain)
             self.getLocationManager()
         }
         
+        /**
+         * 获取 SDK 版本号
+         */
         Function("getVersion") {
             "iOS SDK Version"
         }
         
         // ==================== 定位功能 ====================
         
+        /**
+         * 开始连续定位
+         */
         Function("start") {
             self.getLocationManager().start()
         }
         
+        /**
+         * 停止定位
+         */
         Function("stop") {
             self.getLocationManager().stop()
         }
         
+        /**
+         * 检查是否正在定位
+         */
         AsyncFunction("isStarted") { (promise: Promise) in
             promise.resolve(self.getLocationManager().isStarted())
         }
         
+        /**
+         * 获取当前位置(单次定位)
+         * 返回位置信息和逆地理编码结果
+         */
         AsyncFunction("getCurrentLocation") { (promise: Promise) in
             let status = CLLocationManager.authorizationStatus()
-            let clManager = CLLocationManager()
-            clManager.requestWhenInUseAuthorization()
             
-            if status == .authorizedAlways || status == .authorizedWhenInUse || status == .notDetermined {
+            if status == .authorizedAlways || status == .authorizedWhenInUse {
                 let manager = self.getLocationManager()
                 manager.locationManager?.requestLocation(withReGeocode: manager.locationManager?.locatingWithReGeocode ?? true, completionBlock: { location, regeocode, error in
                     if let error = error {
@@ -85,8 +119,11 @@ public class ExpoGaodeMapModule: Module {
             }
         }
         
+        /**
+         * 坐标转换
+         * iOS 高德地图 SDK 使用 GCJ-02 坐标系,不需要转换
+         */
         AsyncFunction("coordinateConvert") { (coordinate: [String: Double], type: Int, promise: Promise) in
-            // iOS 高德地图 SDK 坐标转换
             guard let latitude = coordinate["latitude"],
                   let longitude = coordinate["longitude"] else {
                 promise.reject("INVALID_ARGUMENT", "无效的坐标参数")
@@ -141,6 +178,37 @@ public class ExpoGaodeMapModule: Module {
         
         Function("stopUpdatingHeading") {
             self.getLocationManager().stopUpdatingHeading()
+        }
+        
+        // ==================== 权限管理 ====================
+        
+        /**
+         * 检查位置权限状态
+         */
+        AsyncFunction("checkLocationPermission") { (promise: Promise) in
+            let status = CLLocationManager.authorizationStatus()
+            let granted = status == .authorizedAlways || status == .authorizedWhenInUse
+            
+            promise.resolve([
+                "granted": granted,
+                "status": self.getAuthorizationStatusString(status)
+            ])
+        }
+        
+        /**
+         * 请求位置权限
+         */
+        AsyncFunction("requestLocationPermission") { (promise: Promise) in
+            if self.permissionManager == nil {
+                self.permissionManager = PermissionManager()
+            }
+            
+            self.permissionManager?.requestPermission { granted, status in
+                promise.resolve([
+                    "granted": granted,
+                    "status": status
+                ])
+            }
         }
         
         // ==================== 事件 ====================
@@ -218,11 +286,11 @@ public class ExpoGaodeMapModule: Module {
             }
             
             Prop("trafficEnabled") { (view: ExpoGaodeMapView, show: Bool) in
-                view.showsTraffic = show
+                view.setShowsTraffic(show)
             }
             
             Prop("buildingsEnabled") { (view: ExpoGaodeMapView, show: Bool) in
-                view.showsBuildings = show
+                view.setShowsBuildings(show)
             }
             
             Prop("indoorViewEnabled") { (view: ExpoGaodeMapView, show: Bool) in
@@ -445,8 +513,12 @@ public class ExpoGaodeMapModule: Module {
         }
     }
     
-    // MARK: - Private Methods
+    // MARK: - 私有方法
     
+    /**
+     * 获取或创建定位管理器实例
+     * 使用懒加载模式,并设置事件回调
+     */
     private func getLocationManager() -> LocationManager {
         if locationManager == nil {
             locationManager = LocationManager()
@@ -458,5 +530,19 @@ public class ExpoGaodeMapModule: Module {
             }
         }
         return locationManager!
+    }
+    
+    /**
+     * 将权限状态转换为字符串
+     */
+    private func getAuthorizationStatusString(_ status: CLAuthorizationStatus) -> String {
+        switch status {
+        case .notDetermined: return "notDetermined"
+        case .restricted: return "restricted"
+        case .denied: return "denied"
+        case .authorizedAlways: return "authorizedAlways"
+        case .authorizedWhenInUse: return "authorizedWhenInUse"
+        @unknown default: return "unknown"
+        }
     }
 }
