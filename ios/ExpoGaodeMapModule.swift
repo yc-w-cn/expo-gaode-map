@@ -153,7 +153,7 @@ public class ExpoGaodeMapModule: Module {
         
         View(ExpoGaodeMapView.self) {
             // 事件 - 使用 Expo 的事件命名约定
-            Events("onMapPress", "onLongPress", "onLoad")
+            Events("onMapPress", "onMapLongPress", "onLoad")
             
             // 地图类型
             Prop("mapType") { (view: ExpoGaodeMapView, type: Int) in
@@ -312,7 +312,7 @@ public class ExpoGaodeMapModule: Module {
         
         // Marker - 标记点
         View(MarkerView.self) {
-            Events("onDragStart", "onDrag", "onDragEnd")
+            Events("onPress", "onDragStart", "onDrag", "onDragEnd")
             
             Prop("position") { (view: MarkerView, position: [String: Double]) in
                 view.setPosition(position)
@@ -333,6 +333,7 @@ public class ExpoGaodeMapModule: Module {
         
         // Circle - 圆形
         View(CircleView.self) {
+            Events("onPress")
             
             Prop("center") { (view: CircleView, center: [String: Double]) in
                 view.setCenter(center)
@@ -357,6 +358,7 @@ public class ExpoGaodeMapModule: Module {
         
         // Polyline - 折线
         View(PolylineView.self) {
+            Events("onPress")
             
             Prop("points") { (view: PolylineView, points: [[String: Double]]) in
                 view.setPoints(points)
@@ -373,6 +375,7 @@ public class ExpoGaodeMapModule: Module {
         
         // Polygon - 多边形
         View(PolygonView.self) {
+            Events("onPress")
             
             Prop("points") { (view: PolygonView, points: [[String: Double]]) in
                 view.setPoints(points)
@@ -408,6 +411,8 @@ public class ExpoGaodeMapModule: Module {
         
         // MultiPoint - 海量点
         View(MultiPointView.self) {
+            Events("onPress")
+            
             Prop("points") { (view: MultiPointView, points: [[String: Any]]) in
                 view.setPoints(points)
             }
@@ -415,6 +420,8 @@ public class ExpoGaodeMapModule: Module {
         
         // Cluster - 点聚合
         View(ClusterView.self) {
+            Events("onPress", "onClusterPress")
+            
             Prop("points") { (view: ClusterView, points: [[String: Any]]) in
                 view.setPoints(points)
             }

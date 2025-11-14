@@ -30,8 +30,8 @@ class ExpoGaodeMapView(context: Context, appContext: AppContext) : ExpoView(cont
   private val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
   
   // 事件派发器
-  private val onPress by EventDispatcher()
-  private val onLongPress by EventDispatcher()
+  private val onMapPress by EventDispatcher()
+  private val onMapLongPress by EventDispatcher()
   private val onLoad by EventDispatcher()
   
   // 高德地图视图
@@ -108,14 +108,14 @@ class ExpoGaodeMapView(context: Context, appContext: AppContext) : ExpoView(cont
    */
   private fun setupMapListeners() {
     aMap.setOnMapClickListener { latLng ->
-      onPress(mapOf(
+      onMapPress(mapOf(
         "latitude" to latLng.latitude,
         "longitude" to latLng.longitude
       ))
     }
     
     aMap.setOnMapLongClickListener { latLng ->
-      onLongPress(mapOf(
+      onMapLongPress(mapOf(
         "latitude" to latLng.latitude,
         "longitude" to latLng.longitude
       ))

@@ -93,8 +93,8 @@
 
 | 事件 | 参数 | 说明 |
 |------|------|------|
-| `onPress` | `(event: LatLng) => void` | 点击地图事件 |
-| `onLongPress` | `(event: LatLng) => void` | 长按地图事件 |
+| `onMapPress` | `(event: LatLng) => void` | 点击地图事件 |
+| `onMapLongPress` | `(event: LatLng) => void` | 长按地图事件 |
 | `onLoad` | `() => void` | 地图加载完成事件 |
 
 ## MapView 方法

@@ -88,8 +88,8 @@ export default function App() {
         // 初始化高德地图 SDK
         console.log('正在初始化高德地图 SDK...');
         initSDK({
-          androidKey: '8ac9e5983e34398473ecc23fec1d4adc',
-          iosKey: 'b07b626eb2ce321df3ff0e9e9371f389',
+          androidKey: '',
+          iosKey: '',
         });
         console.log('✅ 高德地图 SDK 初始化成功');
       } catch (error) {
@@ -354,6 +354,12 @@ export default function App() {
             image:iconUri,
             imageWidth: 40,
             imageHeight: 40,
+          }}
+          onMapPress={() => {
+            console.log('onMapPress:');
+          }}
+          onMapLongPress={()=>{
+            console.log('onMapLongPress');
           }}
         compassEnabled={false}
         tiltGesturesEnabled={false}

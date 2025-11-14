@@ -167,7 +167,7 @@ export interface MapViewProps {
   /**
    * 点击地图事件
    */
-  onPress?: (event: LatLng) => void;
+  onMapPress?: (event: LatLng) => void;
 
   /**
    * 点击标注点事件
@@ -177,7 +177,7 @@ export interface MapViewProps {
   /**
    * 长按地图事件
    */
-  onLongPress?: (event: LatLng) => void;
+  onMapLongPress?: (event: LatLng) => void;
 
   /**
    * 地图状态改变事件（实时触发）

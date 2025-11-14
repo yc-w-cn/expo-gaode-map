@@ -27,7 +27,7 @@ class ExpoGaodeMapView: ExpoView, MAMapViewDelegate {
     var minZoomLevel: CGFloat = 3
     
     let onMapPress = EventDispatcher()
-    let onLongPress = EventDispatcher()
+    let onMapLongPress = EventDispatcher()
     let onLoad = EventDispatcher()
     
     private var mapView: MAMapView!
@@ -244,7 +244,7 @@ extension ExpoGaodeMapView {
     }
     
     public func mapView(_ mapView: MAMapView, didLongPressedAt coordinate: CLLocationCoordinate2D) {
-        onLongPress(["latitude": coordinate.latitude, "longitude": coordinate.longitude])
+        onMapLongPress(["latitude": coordinate.latitude, "longitude": coordinate.longitude])
     }
     
     public func mapView(_ mapView: MAMapView, viewFor annotation: MAAnnotation) -> MAAnnotationView? {

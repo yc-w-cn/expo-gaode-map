@@ -167,7 +167,7 @@ class ExpoGaodeMapModule : Module() {
       Log.d(TAG, "正在注册 ExpoGaodeMapView 视图")
       
       // 事件 - 使用 Expo Modules 的事件命名约定
-      Events("onPress", "onLongPress", "onLoad")
+      Events("onMapPress", "onMapLongPress", "onLoad")
 
       // 地图类型 - 使用泛型语法
       Prop<Int>("mapType") { view, type ->

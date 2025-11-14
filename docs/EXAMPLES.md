@@ -56,7 +56,7 @@ export default function App() {
         myLocationEnabled={true}
         followUserLocation={false}
         trafficEnabled={true}
-        onPress={(e) => console.log('点击地图', e)}
+        onMapPress={(e) => console.log('点击地图', e)}
         onLoad={() => console.log('地图加载完成')}
       >
         {/* 圆形覆盖物 */}
