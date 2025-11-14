@@ -56,13 +56,25 @@ npx react-native run-android
 
 前往 [高德开放平台](https://lbs.amap.com/) 注册并创建应用，获取 API Key。
 
-> ⚠️ **原生配置说明**
-> 
-> 高德地图 SDK 需要在原生项目中进行配置（如在 AndroidManifest.xml 中配置 Key、添加权限等）。具体的原生配置步骤请参考：
+> ⚠️ **重要：原生配置和权限**
+>
+> 高德地图 SDK 需要在原生项目中进行配置：
+>
+> **Android 必需配置：**
+> 1. 在 `AndroidManifest.xml` 中配置 API Key
+> 2. 添加必需权限（网络、定位等）
+> 3. 配置隐私合规（必需）
+>
+> **iOS 必需配置：**
+> 1. 在 `Info.plist` 中配置 API Key
+> 2. 添加定位权限描述（NSLocationWhenInUseUsageDescription 等）
+> 3. 配置隐私合规（必需）
+>
+> **详细配置指南：**
 > - **Android**: [高德地图 Android SDK 配置指南](https://lbs.amap.com/api/android-sdk/guide/create-project/android-studio-create-project)
 > - **iOS**: [高德地图 iOS SDK 配置指南](https://lbs.amap.com/api/ios-sdk/guide/create-project/cocoapods)
-> 
-> 对于 Expo 项目，建议使用 `npx expo prebuild` 生成原生代码后，按照高德官网文档进行配置。
+>
+> 对于 Expo 项目，使用 `npx expo prebuild` 生成原生代码后进行配置。
 
 ### 2. 初始化 SDK
 

@@ -2,6 +2,16 @@
 
 完整的 API 参考文档。
 
+> ⚠️ **权限和隐私合规警告**
+>
+> 使用地图和定位功能前，请确保：
+> 1. ✅ 已在原生项目中配置必需的权限声明
+> 2. ✅ 在运行时请求用户授权
+> 3. ✅ 遵守《个人信息保护法》等隐私法规
+> 4. ✅ 配置高德 SDK 隐私合规接口
+>
+> 详细配置请参考 [README.md](../README.md#权限配置)
+
 ## 目录
 
 - [MapView Props](#mapview-props)
@@ -20,6 +30,10 @@
 | `style` | `ViewStyle` | - | 组件样式 |
 
 ### 定位相关
+
+> ⚠️ **权限要求**：使用定位功能需要用户授权
+> - Android: `ACCESS_FINE_LOCATION` + `ACCESS_COARSE_LOCATION`
+> - iOS: `NSLocationWhenInUseUsageDescription` (Info.plist)
 
 | 属性 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
@@ -119,6 +133,8 @@ interface MapViewRef {
 ```
 
 ## 定位 API
+
+> ⚠️ **权限要求**：所有定位 API 都需要定位权限，请确保已配置并获得用户授权
 
 ### 定位控制
 
