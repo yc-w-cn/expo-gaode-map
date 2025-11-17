@@ -580,3 +580,4 @@ MIT
 - 📝 提交 [GitHub Issue](https://github.com/TomWq/expo-gaode-map/issues)
 - 💬 参与 [Discussions](https://github.com/TomWq/expo-gaode-map/discussions)
 - ⭐ 给项目点个 Star 支持一下
+- 💬 加入 QQ 群：952241387 
