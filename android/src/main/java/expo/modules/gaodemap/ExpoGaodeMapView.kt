@@ -45,6 +45,11 @@ class ExpoGaodeMapView(context: Context, appContext: AppContext) : ExpoView(cont
   private val onMapPress by EventDispatcher()
   private val onMapLongPress by EventDispatcher()
   private val onLoad by EventDispatcher()
+  private val onMarkerPress by EventDispatcher()
+  private val onMarkerDragStart by EventDispatcher()
+  private val onMarkerDrag by EventDispatcher()
+  private val onMarkerDragEnd by EventDispatcher()
+  private val onCirclePress by EventDispatcher()
   
   // 高德地图视图
   private lateinit var mapView: MapView
@@ -73,7 +78,43 @@ class ExpoGaodeMapView(context: Context, appContext: AppContext) : ExpoView(cont
       // 初始化管理器
       cameraManager = CameraManager(aMap)
       uiManager = UIManager(aMap, context)
-      overlayManager = OverlayManager(aMap)
+      overlayManager = OverlayManager(aMap, context).apply {
+        onMarkerPress = { id, lat, lng ->
+          this@ExpoGaodeMapView.onMarkerPress(mapOf(
+            "markerId" to id,
+            "latitude" to lat,
+            "longitude" to lng
+          ))
+        }
+        onMarkerDragStart = { id, lat, lng ->
+          this@ExpoGaodeMapView.onMarkerDragStart(mapOf(
+            "markerId" to id,
+            "latitude" to lat,
+            "longitude" to lng
+          ))
+        }
+        onMarkerDrag = { id, lat, lng ->
+          this@ExpoGaodeMapView.onMarkerDrag(mapOf(
+            "markerId" to id,
+            "latitude" to lat,
+            "longitude" to lng
+          ))
+        }
+        onMarkerDragEnd = { id, lat, lng ->
+          this@ExpoGaodeMapView.onMarkerDragEnd(mapOf(
+            "markerId" to id,
+            "latitude" to lat,
+            "longitude" to lng
+          ))
+        }
+        onCirclePress = { id, lat, lng ->
+          this@ExpoGaodeMapView.onCirclePress(mapOf(
+            "circleId" to id,
+            "latitude" to lat,
+            "longitude" to lng
+          ))
+        }
+      }
       
       // 添加地图视图到布局
       addView(mapView, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
@@ -108,10 +149,16 @@ class ExpoGaodeMapView(context: Context, appContext: AppContext) : ExpoView(cont
    */
   private fun setupMapListeners() {
     aMap.setOnMapClickListener { latLng ->
-      onMapPress(mapOf(
-        "latitude" to latLng.latitude,
-        "longitude" to latLng.longitude
-      ))
+      // 先检查是否点击了圆形
+      val circleId = overlayManager.checkCirclePress(latLng)
+      if (circleId != null) {
+        overlayManager.onCirclePress?.invoke(circleId, latLng.latitude, latLng.longitude)
+      } else {
+        onMapPress(mapOf(
+          "latitude" to latLng.latitude,
+          "longitude" to latLng.longitude
+        ))
+      }
     }
     
     aMap.setOnMapLongClickListener { latLng ->

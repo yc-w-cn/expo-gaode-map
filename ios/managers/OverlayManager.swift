@@ -18,6 +18,12 @@ class OverlayManager {
     private var overlayStyles: [String: [String: Any]] = [:]
     /// 标记点字典 (id -> annotation)
     private var annotations: [String: MAPointAnnotation] = [:]
+    /// 标记点属性字典 (id -> props)
+    private var markerProps: [String: [String: Any]] = [:]
+    /// Circle 点击回调
+    var onCirclePress: (([String: Any]) -> Void)?
+    /// Circle ID 映射 (overlay -> id)
+    private var circleIdMap: [MACircle: String] = [:]
     
     /**
      * 初始化覆盖物管理器
@@ -25,6 +31,28 @@ class OverlayManager {
      */
     init(mapView: MAMapView) {
         self.mapView = mapView
+    }
+    
+    /**
+     * 检查点击位置是否在圆形内
+     */
+    func checkCirclePress(at coordinate: CLLocationCoordinate2D) -> Bool {
+        for (circle, circleId) in circleIdMap {
+            let circleCenter = circle.coordinate
+            let fromLocation = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+            let toLocation = CLLocation(latitude: circleCenter.latitude, longitude: circleCenter.longitude)
+            let distance = fromLocation.distance(from: toLocation)
+            
+            if distance <= circle.radius {
+                onCirclePress?([
+                    "circleId": circleId,
+                    "latitude": coordinate.latitude,
+                    "longitude": coordinate.longitude
+                ])
+                return true
+            }
+        }
+        return false
     }
     
     // MARK: - Circle 圆形
@@ -43,8 +71,9 @@ class OverlayManager {
         
         let circle = MACircle(center: CLLocationCoordinate2D(latitude: latitude, longitude: longitude), radius: radius)
         overlayStyles[id] = props
-        mapView.add(circle!)
         overlays[id] = circle
+        circleIdMap[circle!] = id
+        mapView.add(circle!)
     }
     
     /**
@@ -52,10 +81,11 @@ class OverlayManager {
      * @param id 圆形唯一标识
      */
     func removeCircle(id: String) {
-        guard let mapView = mapView, let circle = overlays[id] else { return }
+        guard let mapView = mapView, let circle = overlays[id] as? MACircle else { return }
         mapView.remove(circle)
         overlays.removeValue(forKey: id)
         overlayStyles.removeValue(forKey: id)
+        circleIdMap.removeValue(forKey: circle)
     }
     
     /**
@@ -84,9 +114,24 @@ class OverlayManager {
         let annotation = MAPointAnnotation()
         annotation.coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
         annotation.title = props["title"] as? String
-        annotation.subtitle = props["description"] as? String
-        mapView.addAnnotation(annotation)
+        annotation.subtitle = props["snippet"] as? String ?? props["description"] as? String
+        
+        // 先保存 props 和 annotation，再添加到地图
+        // 这样 viewFor annotation 回调时就能找到 props
         annotations[id] = annotation
+        markerProps[id] = props
+        
+        mapView.addAnnotation(annotation)
+    }
+    
+    /**
+     * 根据 annotation 获取 marker 属性
+     * @param annotation 标记点对象
+     * @return 对应的属性字典
+     */
+    func getMarkerProps(for annotation: MAAnnotation) -> [String: Any]? {
+        guard let id = getMarkerId(for: annotation) else { return nil }
+        return markerProps[id]
     }
     
     /**
@@ -97,6 +142,7 @@ class OverlayManager {
         guard let mapView = mapView, let annotation = annotations[id] else { return }
         mapView.removeAnnotation(annotation)
         annotations.removeValue(forKey: id)
+        markerProps.removeValue(forKey: id)
     }
     
     /**
@@ -107,6 +153,15 @@ class OverlayManager {
     func updateMarker(id: String, props: [String: Any]) {
         removeMarker(id: id)
         addMarker(id: id, props: props)
+    }
+    
+    /**
+     * 根据 annotation 获取 markerId
+     * @param annotation 标记点对象
+     * @return 对应的 markerId，如果未找到返回 nil
+     */
+    func getMarkerId(for annotation: MAAnnotation) -> String? {
+        return annotations.first(where: { $0.value === annotation })?.key
     }
     
     // MARK: - Polyline 折线
@@ -178,8 +233,8 @@ class OverlayManager {
         guard !coordinates.isEmpty else { return }
         let polygon = MAPolygon(coordinates: &coordinates, count: UInt(coordinates.count))
         overlayStyles[id] = props
-        mapView.add(polygon!)
         overlays[id] = polygon
+        mapView.add(polygon!)
     }
     
     /**
@@ -219,15 +274,12 @@ class OverlayManager {
                 return nil
             }
             
-            // 设置填充颜色
             if let fillColor = style?["fillColor"] {
                 renderer.fillColor = ColorParser.parseColor(fillColor)
             }
-            // 设置边框颜色
             if let strokeColor = style?["strokeColor"] {
                 renderer.strokeColor = ColorParser.parseColor(strokeColor)
             }
-            // 设置边框宽度
             if let strokeWidth = style?["strokeWidth"] as? Double {
                 renderer.lineWidth = CGFloat(strokeWidth)
             }
@@ -236,13 +288,18 @@ class OverlayManager {
         } else if let polyline = overlay as? MAPolyline {
             let renderer = MAPolylineRenderer(polyline: polyline)!
             
+            print("🔷 OverlayManager.getRenderer(Polyline): style=\(String(describing: style))")
+            
             // 设置线宽
             if let width = style?["width"] as? Double {
                 renderer.lineWidth = CGFloat(width)
+                print("🔷 OverlayManager: width=\(width)")
             } else if let strokeWidth = style?["strokeWidth"] as? Double {
                 renderer.lineWidth = CGFloat(strokeWidth)
+                print("🔷 OverlayManager: strokeWidth=\(strokeWidth)")
             } else {
                 renderer.lineWidth = 8
+                print("🔷 OverlayManager: 使用默认 width=8")
             }
             
             // 设置线条样式
@@ -251,16 +308,20 @@ class OverlayManager {
             
             // 设置纹理或颜色
             if let textureUrl = style?["texture"] as? String, !textureUrl.isEmpty {
+                print("🔷 OverlayManager: 加载纹理 \(textureUrl)")
                 loadPolylineTexture(url: textureUrl, renderer: renderer)
             } else {
                 if let color = style?["color"] {
                     let parsedColor = ColorParser.parseColor(color)
                     renderer.strokeColor = parsedColor ?? .red
+                    print("🔷 OverlayManager: color=\(color) -> \(String(describing: parsedColor))")
                 } else if let strokeColor = style?["strokeColor"] {
                     let parsedColor = ColorParser.parseColor(strokeColor)
                     renderer.strokeColor = parsedColor ?? .red
+                    print("🔷 OverlayManager: strokeColor=\(strokeColor) -> \(String(describing: parsedColor))")
                 } else {
                     renderer.strokeColor = .red
+                    print("🔷 OverlayManager: 使用默认红色")
                 }
             }
             
@@ -270,17 +331,24 @@ class OverlayManager {
                 return nil
             }
             
+            print("🔶 OverlayManager.getRenderer(Polygon): style=\(String(describing: style))")
+            
             // 设置填充颜色
             if let fillColor = style?["fillColor"] {
-                renderer.fillColor = ColorParser.parseColor(fillColor)
+                let parsedColor = ColorParser.parseColor(fillColor)
+                renderer.fillColor = parsedColor
+                print("🔶 OverlayManager: fillColor=\(fillColor) -> \(String(describing: parsedColor))")
             }
             // 设置边框颜色
             if let strokeColor = style?["strokeColor"] {
-                renderer.strokeColor = ColorParser.parseColor(strokeColor)
+                let parsedColor = ColorParser.parseColor(strokeColor)
+                renderer.strokeColor = parsedColor
+                print("🔶 OverlayManager: strokeColor=\(strokeColor) -> \(String(describing: parsedColor))")
             }
             // 设置边框宽度
             if let strokeWidth = style?["strokeWidth"] as? Double {
                 renderer.lineWidth = CGFloat(strokeWidth)
+                print("🔶 OverlayManager: strokeWidth=\(strokeWidth)")
             }
             
             return renderer

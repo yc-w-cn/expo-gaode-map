@@ -22,70 +22,54 @@ import { MapContext } from '../../ExpoGaodeMapView';
 export default function Polygon(props: PolygonProps) {
   const { points, fillColor, strokeColor, strokeWidth, zIndex } = props;
   const nativeRef = useContext(MapContext);
-  const polygonIdRef = useRef<string>(`polygon_${Date.now()}_${Math.random()}`);
+  const polygonIdRef = useRef<string | null>(null);
+  const propsRef = useRef(props);
+  
+  useEffect(() => {
+    propsRef.current = props;
+  }, [props]);
 
   useEffect(() => {
-    const polygonId = polygonIdRef.current;
-
-    // 添加多边形
-    if (nativeRef?.current && points && points.length >= 3) {
-      try {
-        console.log('🟦 Polygon 组件调用 addPolygon:', polygonId, {
-          points,
-          fillColor: fillColor ?? 0x440000FF,
-          strokeColor: strokeColor ?? -16776961,
-          strokeWidth: strokeWidth ?? 10,
-          zIndex: zIndex ?? 0,
-        });
-        
+    const checkAndAdd = () => {
+      if (!nativeRef?.current) {
+        setTimeout(checkAndAdd, 50);
+        return;
+      }
+      
+      const polygonId = `polygon_${Date.now()}_${Math.random()}`;
+      polygonIdRef.current = polygonId;
+      
+      const { points, fillColor, strokeColor, strokeWidth, zIndex } = propsRef.current;
+      
+      if (points && points.length >= 3) {
         nativeRef.current.addPolygon(polygonId, {
           points,
-          fillColor: fillColor ?? 0x440000FF,
-          strokeColor: strokeColor ?? -16776961,
+          fillColor: fillColor ?? '#880000FF',
+          strokeColor: strokeColor ?? '#FFFF0000',
           strokeWidth: strokeWidth ?? 10,
           zIndex: zIndex ?? 0,
         });
-        
-        console.log('✅ Polygon addPolygon 调用完成');
-      } catch (error) {
-        console.error('❌ 添加多边形失败:', error);
       }
-    } else {
-      console.warn('⚠️ Polygon 组件条件不满足:', {
-        hasNativeRef: !!nativeRef?.current,
-        hasPoints: !!points,
-        pointsLength: points?.length,
-      });
-    }
-
-    // 清理函数
+    };
+    
+    checkAndAdd();
+    
     return () => {
-      if (nativeRef?.current) {
-        try {
-          nativeRef.current.removePolygon(polygonId);
-        } catch (error) {
-          console.error('移除多边形失败:', error);
-        }
+      if (polygonIdRef.current && nativeRef?.current) {
+        nativeRef.current.removePolygon(polygonIdRef.current);
       }
     };
   }, []);
 
-  // 更新多边形属性
   useEffect(() => {
-    const polygonId = polygonIdRef.current;
-
-    if (nativeRef?.current) {
-      try {
-        nativeRef.current.updatePolygon(polygonId, {
-          points,
-          fillColor,
-          strokeColor,
-          strokeWidth,
-          zIndex,
-        });
-      } catch (error) {
-        console.error('更新多边形失败:', error);
-      }
+    if (polygonIdRef.current && nativeRef?.current) {
+      nativeRef.current.updatePolygon(polygonIdRef.current, {
+        points,
+        fillColor,
+        strokeColor,
+        strokeWidth,
+        zIndex,
+      });
     }
   }, [points, fillColor, strokeColor, strokeWidth, zIndex]);
 

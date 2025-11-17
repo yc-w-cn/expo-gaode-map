@@ -221,7 +221,7 @@ public class ExpoGaodeMapModule: Module {
         
         View(ExpoGaodeMapView.self) {
             // 事件 - 使用 Expo 的事件命名约定
-            Events("onMapPress", "onMapLongPress", "onLoad")
+            Events("onMapPress", "onMapLongPress", "onLoad", "onMarkerPress", "onMarkerDragStart", "onMarkerDrag", "onMarkerDragEnd", "onCirclePress")
             
             // 地图类型
             Prop("mapType") { (view: ExpoGaodeMapView, type: Int) in
@@ -390,12 +390,40 @@ public class ExpoGaodeMapModule: Module {
                 view.setTitle(title)
             }
             
-            Prop("description") { (view: MarkerView, description: String) in
-                view.setDescription(description)
+            Prop("snippet") { (view: MarkerView, snippet: String) in
+                view.setDescription(snippet)
             }
             
             Prop("draggable") { (view: MarkerView, draggable: Bool) in
                 view.setDraggable(draggable)
+            }
+            
+            Prop("icon") { (view: MarkerView, source: [String: Any]?) in
+                view.setIcon(source)
+            }
+            
+            Prop("iconWidth") { (view: MarkerView, width: Double) in
+                view.iconWidth = width
+            }
+            
+            Prop("iconHeight") { (view: MarkerView, height: Double) in
+                view.iconHeight = height
+            }
+            
+            Prop("centerOffset") { (view: MarkerView, offset: [String: Double]) in
+                view.setCenterOffset(offset)
+            }
+            
+            Prop("animatesDrop") { (view: MarkerView, animate: Bool) in
+                view.setAnimatesDrop(animate)
+            }
+            
+            Prop("pinColor") { (view: MarkerView, color: String) in
+                view.setPinColor(color)
+            }
+            
+            Prop("canShowCallout") { (view: MarkerView, show: Bool) in
+                view.setCanShowCallout(show)
             }
         }
         
@@ -411,16 +439,16 @@ public class ExpoGaodeMapModule: Module {
                 view.setRadius(radius)
             }
             
-            Prop("fillColor") { (view: CircleView, color: Int) in
+            Prop("fillColor") { (view: CircleView, color: String) in
                 view.setFillColor(color)
             }
             
-            Prop("strokeColor") { (view: CircleView, color: Int) in
+            Prop("strokeColor") { (view: CircleView, color: String) in
                 view.setStrokeColor(color)
             }
             
-            Prop("strokeWidth") { (view: CircleView, width: Float) in
-                view.setStrokeWidth(width)
+            Prop("strokeWidth") { (view: CircleView, width: Double) in
+                view.setStrokeWidth(Float(width))
             }
         }
         
@@ -432,11 +460,11 @@ public class ExpoGaodeMapModule: Module {
                 view.setPoints(points)
             }
             
-            Prop("strokeWidth") { (view: PolylineView, width: Float) in
-                view.setStrokeWidth(width)
+            Prop("strokeWidth") { (view: PolylineView, width: Double) in
+                view.setStrokeWidth(Float(width))
             }
             
-            Prop("strokeColor") { (view: PolylineView, color: Int) in
+            Prop("strokeColor") { (view: PolylineView, color: String) in
                 view.setStrokeColor(color)
             }
             
@@ -453,16 +481,16 @@ public class ExpoGaodeMapModule: Module {
                 view.setPoints(points)
             }
             
-            Prop("fillColor") { (view: PolygonView, color: Int) in
+            Prop("fillColor") { (view: PolygonView, color: String) in
                 view.setFillColor(color)
             }
             
-            Prop("strokeColor") { (view: PolygonView, color: Int) in
+            Prop("strokeColor") { (view: PolygonView, color: String) in
                 view.setStrokeColor(color)
             }
             
-            Prop("strokeWidth") { (view: PolygonView, width: Float) in
-                view.setStrokeWidth(width)
+            Prop("strokeWidth") { (view: PolygonView, width: Double) in
+                view.setStrokeWidth(Float(width))
             }
         }
         

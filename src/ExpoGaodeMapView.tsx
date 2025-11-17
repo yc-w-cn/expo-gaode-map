@@ -22,6 +22,61 @@ const NativeView: React.ComponentType<MapViewProps & { ref?: React.Ref<NativeMap
 // 创建 Context 用于子组件访问 MapRef
 export const MapContext = React.createContext<React.RefObject<MapViewRef | null> | null>(null);
 
+// Marker 事件管理器
+type MarkerEventCallbacks = {
+  onPress?: () => void;
+  onDragStart?: () => void;
+  onDrag?: () => void;
+  onDragEnd?: (event: { nativeEvent: LatLng }) => void;
+};
+
+class MarkerEventManager {
+  private callbacks = new Map<string, MarkerEventCallbacks>();
+  
+  register(markerId: string, callbacks: MarkerEventCallbacks) {
+    this.callbacks.set(markerId, callbacks);
+  }
+  
+  unregister(markerId: string) {
+    this.callbacks.delete(markerId);
+  }
+  
+  trigger(markerId: string, eventType: keyof MarkerEventCallbacks, data?: any) {
+    const callbacks = this.callbacks.get(markerId);
+    if (callbacks && callbacks[eventType]) {
+      callbacks[eventType]!(data);
+    }
+  }
+}
+
+export const MarkerEventContext = React.createContext<MarkerEventManager | null>(null);
+
+// Circle 事件管理器
+type CircleEventCallbacks = {
+  onPress?: () => void;
+};
+
+class CircleEventManager {
+  private callbacks = new Map<string, CircleEventCallbacks>();
+  
+  register(circleId: string, callbacks: CircleEventCallbacks) {
+    this.callbacks.set(circleId, callbacks);
+  }
+  
+  unregister(circleId: string) {
+    this.callbacks.delete(circleId);
+  }
+  
+  trigger(circleId: string, eventType: keyof CircleEventCallbacks) {
+    const callbacks = this.callbacks.get(circleId);
+    if (callbacks && callbacks[eventType]) {
+      callbacks[eventType]!();
+    }
+  }
+}
+
+export const CircleEventContext = React.createContext<CircleEventManager | null>(null);
+
 /**
  * 高德地图视图组件，提供地图操作API和覆盖物管理功能
  * 
@@ -43,6 +98,54 @@ export const MapContext = React.createContext<React.RefObject<MapViewRef | null>
 const ExpoGaodeMapView = React.forwardRef<MapViewRef, MapViewProps>((props, ref) => {
   const nativeRef = React.useRef<NativeMapViewRef>(null);
   const internalRef = React.useRef<MapViewRef | null>(null);
+  const markerEventManager = React.useRef(new MarkerEventManager()).current;
+  const circleEventManager = React.useRef(new CircleEventManager()).current;
+  
+  // 处理 Marker 事件
+  const handleMarkerPress = React.useCallback((event: any) => {
+    const markerId = event.nativeEvent?.markerId;
+    if (markerId) {
+      markerEventManager.trigger(markerId, 'onPress');
+    }
+    props.onMarkerPress?.(event);
+  }, [props.onMarkerPress]);
+  
+  const handleMarkerDragStart = React.useCallback((event: any) => {
+    const markerId = event.nativeEvent?.markerId;
+    if (markerId) {
+      markerEventManager.trigger(markerId, 'onDragStart');
+    }
+    props.onMarkerDragStart?.(event);
+  }, [props.onMarkerDragStart]);
+  
+  const handleMarkerDrag = React.useCallback((event: any) => {
+    const markerId = event.nativeEvent?.markerId;
+    if (markerId) {
+      markerEventManager.trigger(markerId, 'onDrag');
+    }
+    props.onMarkerDrag?.(event);
+  }, [props.onMarkerDrag]);
+  
+  const handleMarkerDragEnd = React.useCallback((event: any) => {
+    const markerId = event.nativeEvent?.markerId;
+    if (markerId) {
+      markerEventManager.trigger(markerId, 'onDragEnd', {
+        nativeEvent: {
+          latitude: event.nativeEvent.latitude,
+          longitude: event.nativeEvent.longitude
+        }
+      });
+    }
+    props.onMarkerDragEnd?.(event);
+  }, [props.onMarkerDragEnd]);
+  
+  const handleCirclePress = React.useCallback((event: any) => {
+    const circleId = event.nativeEvent?.circleId;
+    if (circleId) {
+      circleEventManager.trigger(circleId, 'onPress');
+    }
+    props.onCirclePress?.(event);
+  }, [props.onCirclePress]);
 
   const apiRef: MapViewRef = React.useMemo(() => ({
     /**
@@ -243,7 +346,21 @@ const ExpoGaodeMapView = React.forwardRef<MapViewRef, MapViewProps>((props, ref)
 
   return (
     <MapContext.Provider value={internalRef}>
-      <NativeView ref={nativeRef} {...props} />
+      <MarkerEventContext.Provider value={markerEventManager}>
+        <CircleEventContext.Provider value={circleEventManager}>
+          <NativeView
+            ref={nativeRef}
+            {...props}
+            onMarkerPress={handleMarkerPress}
+            onMarkerDragStart={handleMarkerDragStart}
+            onMarkerDrag={handleMarkerDrag}
+            onMarkerDragEnd={handleMarkerDragEnd}
+            onCirclePress={handleCirclePress}
+          >
+            {props.children}
+          </NativeView>
+        </CircleEventContext.Provider>
+      </MarkerEventContext.Provider>
     </MapContext.Provider>
   );
 });

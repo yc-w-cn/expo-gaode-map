@@ -200,6 +200,31 @@ export interface MapViewProps {
   onLocation?: (event: Location) => void;
 
   /**
+   * Marker 点击事件
+   */
+  onMarkerPress?: (event: { markerId: string } & LatLng) => void;
+
+  /**
+   * Marker 拖拽开始事件
+   */
+  onMarkerDragStart?: (event: { markerId: string } & LatLng) => void;
+
+  /**
+   * Marker 拖拽中事件
+   */
+  onMarkerDrag?: (event: { markerId: string } & LatLng) => void;
+
+  /**
+   * Marker 拖拽结束事件
+   */
+  onMarkerDragEnd?: (event: { markerId: string } & LatLng) => void;
+
+  /**
+   * Circle 点击事件
+   */
+  onCirclePress?: (event: { circleId: string } & LatLng) => void;
+
+  /**
    * 子组件
    */
   children?: React.ReactNode;

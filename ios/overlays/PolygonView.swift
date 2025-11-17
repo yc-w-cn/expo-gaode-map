@@ -43,17 +43,29 @@ class PolygonView: ExpoView {
      * 更新多边形覆盖物
      */
     private func updatePolygon() {
-        guard let mapView = mapView else { return }
+        guard let mapView = mapView else {
+            print("❌ PolygonView.updatePolygon: mapView 为空")
+            return
+        }
         if let old = polygon { mapView.remove(old) }
         
         var coords = points.compactMap { point -> CLLocationCoordinate2D? in
             guard let lat = point["latitude"], let lng = point["longitude"] else { return nil }
             return CLLocationCoordinate2D(latitude: lat, longitude: lng)
         }
-        guard !coords.isEmpty else { return }
+        guard !coords.isEmpty else {
+            print("❌ PolygonView.updatePolygon: 点数组为空")
+            return
+        }
+        
+        print("🔶 PolygonView.updatePolygon: points=\(coords.count)个点")
+        print("🔶 PolygonView.updatePolygon: fillColor=\(String(describing: fillColor)), strokeColor=\(String(describing: strokeColor)), strokeWidth=\(strokeWidth)")
         
         polygon = MAPolygon(coordinates: &coords, count: UInt(coords.count))
         mapView.add(polygon!)
+        
+        renderer = nil
+        print("🔶 PolygonView.updatePolygon: renderer 已清空")
     }
     
     /**
@@ -63,9 +75,15 @@ class PolygonView: ExpoView {
     func getRenderer() -> MAOverlayRenderer {
         if renderer == nil, let polygon = polygon {
             renderer = MAPolygonRenderer(polygon: polygon)
-            renderer?.fillColor = ColorParser.parseColor(fillColor) ?? UIColor.clear
-            renderer?.strokeColor = ColorParser.parseColor(strokeColor) ?? UIColor.clear
+            let parsedFillColor = ColorParser.parseColor(fillColor)
+            let parsedStrokeColor = ColorParser.parseColor(strokeColor)
+            renderer?.fillColor = parsedFillColor ?? UIColor.clear
+            renderer?.strokeColor = parsedStrokeColor ?? UIColor.clear
             renderer?.lineWidth = CGFloat(strokeWidth)
+            print("🔶 PolygonView.getRenderer: 创建新 renderer")
+            print("🔶 PolygonView.getRenderer: fillColor=\(String(describing: parsedFillColor)), strokeColor=\(String(describing: parsedStrokeColor)), lineWidth=\(strokeWidth)")
+        } else {
+            print("🔶 PolygonView.getRenderer: 使用缓存的 renderer")
         }
         return renderer!
     }
@@ -76,7 +94,6 @@ class PolygonView: ExpoView {
      */
     func setPoints(_ points: [[String: Double]]) {
         self.points = points
-        renderer = nil
         updatePolygon()
     }
     
@@ -85,6 +102,7 @@ class PolygonView: ExpoView {
      * @param color 颜色值
      */
     func setFillColor(_ color: Any?) {
+        print("🔶 PolygonView.setFillColor: \(String(describing: color))")
         fillColor = color
         renderer = nil
         updatePolygon()
@@ -95,6 +113,7 @@ class PolygonView: ExpoView {
      * @param color 颜色值
      */
     func setStrokeColor(_ color: Any?) {
+        print("🔶 PolygonView.setStrokeColor: \(String(describing: color))")
         strokeColor = color
         renderer = nil
         updatePolygon()
@@ -105,6 +124,7 @@ class PolygonView: ExpoView {
      * @param width 宽度值
      */
     func setStrokeWidth(_ width: Float) {
+        print("🔶 PolygonView.setStrokeWidth: \(width)")
         strokeWidth = width
         renderer = nil
         updatePolygon()

@@ -3,13 +3,20 @@ import MAMapKit
 
 /**
  * 标记点视图
- * 
+ *
  * 负责:
  * - 在地图上显示标记点
  * - 管理标记点属性(位置、标题、描述)
  * - 支持拖拽功能
+ * - 支持自定义 children 视图
  */
 class MarkerView: ExpoView {
+    // MARK: - 事件派发器
+    let onPress = EventDispatcher()
+    let onDragStart = EventDispatcher()
+    let onDrag = EventDispatcher()
+    let onDragEnd = EventDispatcher()
+    
     /// 标记点位置
     var position: [String: Double] = [:]
     /// 标题
@@ -18,11 +25,27 @@ class MarkerView: ExpoView {
     var markerDescription: String = ""
     /// 是否可拖拽
     var draggable: Bool = false
+    /// 图标 URI
+    var iconUri: String?
+    /// 图标宽度
+    var iconWidth: Double = 40
+    /// 图标高度
+    var iconHeight: Double = 40
+    /// 中心偏移
+    var centerOffset: [String: Double]?
+    /// 是否显示动画
+    var animatesDrop: Bool = false
+    /// 大头针颜色
+    var pinColor: String = "red"
+    /// 是否显示气泡
+    var canShowCallout: Bool = true
     
     /// 地图视图弱引用
     private var mapView: MAMapView?
     /// 标记点对象
-    private var annotation: MAPointAnnotation?
+    var annotation: MAPointAnnotation?
+    /// 标记点视图
+    private var annotationView: MAAnnotationView?
     
     required init(appContext: AppContext? = nil) {
         super.init(appContext: appContext)
@@ -60,6 +83,9 @@ class MarkerView: ExpoView {
         
         mapView.addAnnotation(annotation)
         self.annotation = annotation
+        
+        // 获取 annotationView
+        annotationView = mapView.view(for: annotation)
     }
     
     /**
@@ -95,7 +121,33 @@ class MarkerView: ExpoView {
      */
     func setDraggable(_ draggable: Bool) {
         self.draggable = draggable
-        // iOS 高德地图标记默认不可拖拽，需要自定义实现
+        updateAnnotation()
+    }
+    
+    func setIcon(_ source: [String: Any]?) {
+        if let dict = source {
+            // 处理 require() 返回的对象
+            if let uri = dict["uri"] as? String {
+                self.iconUri = uri
+            }
+        }
+        updateAnnotation()
+    }
+    
+    func setCenterOffset(_ offset: [String: Double]) {
+        self.centerOffset = offset
+    }
+    
+    func setAnimatesDrop(_ animate: Bool) {
+        self.animatesDrop = animate
+    }
+    
+    func setPinColor(_ color: String) {
+        self.pinColor = color
+    }
+    
+    func setCanShowCallout(_ show: Bool) {
+        self.canShowCallout = show
     }
     
     /**

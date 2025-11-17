@@ -450,16 +450,18 @@ await mapRef.current?.removeCircle('circle1');
 
 ### Marker (标记点)
 
+#### 基础用法
+
 **声明式用法:**
 ```tsx
 <MapView style={{ flex: 1 }}>
   <Marker
     position={{ latitude: 39.9, longitude: 116.4 }}
     title="标题"
-    description="描述信息"
+    snippet="描述信息"
     draggable={true}
     onPress={() => console.log('点击标记')}
-    onDragEnd={(e) => console.log('拖动结束', e)}
+    onDragEnd={(e) => console.log('拖动结束', e.nativeEvent)}
   />
 </MapView>
 ```
@@ -469,6 +471,7 @@ await mapRef.current?.removeCircle('circle1');
 await mapRef.current?.addMarker('marker1', {
   position: { latitude: 39.9, longitude: 116.4 },
   title: '标题',
+  snippet: '描述信息',
   draggable: true,
 });
 
@@ -477,6 +480,87 @@ await mapRef.current?.updateMarker('marker1', {
 });
 
 await mapRef.current?.removeMarker('marker1');
+```
+
+> **⚠️ 限制**：命令式 API 添加的 Marker **不支持事件回调**（onPress, onDragEnd 等）。如需事件处理，请使用声明式 `<Marker>` 组件。
+
+#### 自定义图标
+
+```tsx
+import { Image } from 'react-native';
+
+// 获取本地图片 URI
+const iconUri = Image.resolveAssetSource(require('./assets/marker-icon.png')).uri;
+
+<MapView style={{ flex: 1 }}>
+  <Marker
+    position={{ latitude: 39.9, longitude: 116.4 }}
+    title="自定义图标"
+    icon={iconUri}
+    iconWidth={50}
+    iconHeight={50}
+    onPress={() => console.log('点击自定义图标标记')}
+  />
+</MapView>
+```
+
+> **注意**：
+> - `iconWidth` 和 `iconHeight` 使用点(points)作为单位
+> - 在不同密度屏幕上会自动缩放，保持视觉一致性
+> - 支持网络图片（http/https）和本地图片
+
+#### Android 特有属性
+
+```tsx
+<MapView style={{ flex: 1 }}>
+  <Marker
+    position={{ latitude: 39.9, longitude: 116.4 }}
+    title="Android 特性"
+    opacity={0.8}
+    flat={true}
+    zIndex={10}
+    anchor={{ x: 0.5, y: 1.0 }}
+  />
+</MapView>
+```
+
+#### iOS 特有属性
+
+```tsx
+import { Platform } from 'react-native';
+
+<MapView style={{ flex: 1 }}>
+  {Platform.OS === 'ios' && (
+    <Marker
+      position={{ latitude: 39.9, longitude: 116.4 }}
+      title="iOS 特性"
+      pinColor="green"
+      animatesDrop={true}
+      centerOffset={{ x: 0, y: -20 }}
+    />
+  )}
+</MapView>
+```
+
+#### 拖拽事件处理
+
+> **注意**：事件处理仅在声明式 `<Marker>` 组件中有效
+
+```tsx
+<MapView style={{ flex: 1 }}>
+  <Marker
+    position={{ latitude: 39.9, longitude: 116.4 }}
+    title="可拖拽标记"
+    draggable={true}
+    onDragStart={() => console.log('开始拖拽')}
+    onDrag={() => console.log('拖拽中')}
+    onDragEnd={(e) => {
+      const { latitude, longitude } = e.nativeEvent;
+      console.log(`拖拽结束: ${latitude}, ${longitude}`);
+      Alert.alert('新位置', `纬度: ${latitude.toFixed(6)}\n经度: ${longitude.toFixed(6)}`);
+    }}
+  />
+</MapView>
 ```
 
 ### Polyline (折线)

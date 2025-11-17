@@ -10,6 +10,9 @@ import MAMapKit
  * - 响应属性变化并更新渲染
  */
 class CircleView: ExpoView {
+    /// 事件派发器
+    let onPress = EventDispatcher()
+    
     /// 圆心坐标
     var circleCenter: [String: Double] = [:]
     /// 半径(米)
@@ -30,7 +33,6 @@ class CircleView: ExpoView {
     
     required init(appContext: AppContext? = nil) {
         super.init(appContext: appContext)
-        circle = MACircle()
     }
     
     /**
@@ -39,19 +41,39 @@ class CircleView: ExpoView {
      */
     func setMap(_ map: MAMapView) {
         self.mapView = map
-        if let circle = circle {
-            map.add(circle)
-        }
+        updateCircle()
     }
     
     /**
      * 更新圆形覆盖物
      */
     private func updateCircle() {
-        guard let latitude = circleCenter["latitude"],
-              let longitude = circleCenter["longitude"] else { return }
-        circle?.coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-        circle?.radius = radius
+        guard let mapView = mapView,
+              let latitude = circleCenter["latitude"],
+              let longitude = circleCenter["longitude"],
+              radius > 0 else {
+            print("❌ CircleView.updateCircle: 条件不满足")
+            return
+        }
+        
+        print("🔵 CircleView.updateCircle: center=(\(latitude),\(longitude)), radius=\(radius)")
+        print("🔵 CircleView.updateCircle: fillColor=\(String(describing: fillColor)), strokeColor=\(String(describing: strokeColor)), strokeWidth=\(strokeWidth)")
+        
+        if circle == nil {
+            let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+            circle = MACircle(center: coordinate, radius: radius)
+            mapView.add(circle!)
+            print("🔵 CircleView.updateCircle: 创建新圆形")
+        } else {
+            circle?.coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+            circle?.radius = radius
+            mapView.remove(circle!)
+            mapView.add(circle!)
+            print("🔵 CircleView.updateCircle: 更新现有圆形")
+        }
+        
+        renderer = nil
+        print("🔵 CircleView.updateCircle: renderer 已清空")
     }
     
     /**
@@ -61,9 +83,15 @@ class CircleView: ExpoView {
     func getRenderer() -> MAOverlayRenderer {
         if renderer == nil, let circle = circle {
             renderer = MACircleRenderer(circle: circle)
-            renderer?.fillColor = ColorParser.parseColor(fillColor) ?? UIColor.clear
-            renderer?.strokeColor = ColorParser.parseColor(strokeColor) ?? UIColor.clear
+            let parsedFillColor = ColorParser.parseColor(fillColor)
+            let parsedStrokeColor = ColorParser.parseColor(strokeColor)
+            renderer?.fillColor = parsedFillColor ?? UIColor.clear
+            renderer?.strokeColor = parsedStrokeColor ?? UIColor.clear
             renderer?.lineWidth = CGFloat(strokeWidth)
+            print("🔵 CircleView.getRenderer: 创建新 renderer")
+            print("🔵 CircleView.getRenderer: fillColor=\(String(describing: parsedFillColor)), strokeColor=\(String(describing: parsedStrokeColor)), lineWidth=\(strokeWidth)")
+        } else {
+            print("🔵 CircleView.getRenderer: 使用缓存的 renderer")
         }
         return renderer!
     }
@@ -74,7 +102,6 @@ class CircleView: ExpoView {
      */
     func setCenter(_ center: [String: Double]) {
         circleCenter = center
-        renderer = nil
         updateCircle()
     }
     
@@ -84,7 +111,6 @@ class CircleView: ExpoView {
      */
     func setRadius(_ radius: Double) {
         self.radius = radius
-        renderer = nil
         updateCircle()
     }
     
@@ -93,6 +119,7 @@ class CircleView: ExpoView {
      * @param color 颜色值
      */
     func setFillColor(_ color: Any?) {
+        print("🔵 CircleView.setFillColor: \(String(describing: color))")
         fillColor = color
         renderer = nil
         updateCircle()
@@ -103,6 +130,7 @@ class CircleView: ExpoView {
      * @param color 颜色值
      */
     func setStrokeColor(_ color: Any?) {
+        print("🔵 CircleView.setStrokeColor: \(String(describing: color))")
         strokeColor = color
         renderer = nil
         updateCircle()
@@ -113,6 +141,7 @@ class CircleView: ExpoView {
      * @param width 宽度值
      */
     func setStrokeWidth(_ width: Float) {
+        print("🔵 CircleView.setStrokeWidth: \(width)")
         strokeWidth = width
         renderer = nil
         updateCircle()

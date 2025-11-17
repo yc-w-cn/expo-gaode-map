@@ -1,6 +1,8 @@
 package expo.modules.gaodemap.managers
 
+import android.content.Context
 import android.util.Log
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import com.amap.api.maps.AMap
 import com.amap.api.maps.model.LatLng
@@ -12,7 +14,7 @@ import java.net.URL
  * 覆盖物管理器
  * 负责地图上所有覆盖物的添加、删除、更新
  */
-class OverlayManager(private val aMap: AMap) {
+class OverlayManager(private val aMap: AMap, private val context: Context) {
   
   companion object {
     private const val TAG = "OverlayManager"
@@ -23,6 +25,21 @@ class OverlayManager(private val aMap: AMap) {
   private val markers = mutableMapOf<String, com.amap.api.maps.model.Marker>()
   private val polylines = mutableMapOf<String, com.amap.api.maps.model.Polyline>()
   private val polygons = mutableMapOf<String, com.amap.api.maps.model.Polygon>()
+  
+  // Marker ID 映射
+  private val markerIdMap = mutableMapOf<com.amap.api.maps.model.Marker, String>()
+  
+  // Circle ID 映射
+  private val circleIdMap = mutableMapOf<com.amap.api.maps.model.Circle, String>()
+  
+  // 事件回调
+  var onMarkerPress: ((String, Double, Double) -> Unit)? = null
+  var onMarkerDragStart: ((String, Double, Double) -> Unit)? = null
+  var onMarkerDrag: ((String, Double, Double) -> Unit)? = null
+  var onMarkerDragEnd: ((String, Double, Double) -> Unit)? = null
+  var onCirclePress: ((String, Double, Double) -> Unit)? = null
+  
+  private val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
   
   // ==================== 圆形覆盖物 ====================
   
@@ -49,11 +66,13 @@ class OverlayManager(private val aMap: AMap) {
       
       val circle = aMap.addCircle(options)
       circles[id] = circle
+      circleIdMap[circle] = id
     }
   }
   
   fun removeCircle(id: String) {
     circles[id]?.let { circle ->
+      circleIdMap.remove(circle)
       circle.remove()
       circles.remove(id)
     }
@@ -84,11 +103,22 @@ class OverlayManager(private val aMap: AMap) {
   // ==================== 标记点 ====================
   
   fun addMarker(id: String, props: Map<String, Any>) {
+    Log.d(TAG, "addMarker 调用 - ID: $id")
+    Log.d(TAG, "addMarker props: $props")
     
     @Suppress("UNCHECKED_CAST")
     val position = props["position"] as? Map<String, Double>
     val title = props["title"] as? String
+    val snippet = props["snippet"] as? String
     val draggable = props["draggable"] as? Boolean ?: false
+    val icon = props["icon"]
+    // 将 RN 的点(points)转换为 Android 的 dp
+    val iconWidth = dpToPx((props["iconWidth"] as? Number)?.toFloat() ?: 40f)
+    val iconHeight = dpToPx((props["iconHeight"] as? Number)?.toFloat() ?: 40f)
+    val opacity = (props["opacity"] as? Number)?.toFloat() ?: 1.0f
+    val flat = props["flat"] as? Boolean ?: false
+    val zIndex = (props["zIndex"] as? Number)?.toFloat() ?: 0f
+    val anchor = props["anchor"] as? Map<String, Double>
     
     if (position != null) {
       val lat = position["latitude"] ?: 0.0
@@ -98,21 +128,115 @@ class OverlayManager(private val aMap: AMap) {
       val options = com.amap.api.maps.model.MarkerOptions()
         .position(latLng)
         .draggable(draggable)
+        .setFlat(flat)
+        .zIndex(zIndex)
       
       title?.let { options.title(it) }
+      snippet?.let { options.snippet(it) }
       
-      val marker = aMap.addMarker(options)
-      
-      if (!title.isNullOrEmpty()) {
-        marker?.showInfoWindow()
+      anchor?.let {
+        val x = (it["x"] as? Number)?.toFloat() ?: 0.5f
+        val y = (it["y"] as? Number)?.toFloat() ?: 1.0f
+        options.anchor(x, y)
       }
       
+      val marker = aMap.addMarker(options)
+      marker?.alpha = opacity
+      
       markers[id] = marker
+      marker?.let { markerIdMap[it] = id }
+      
+      // 加载自定义图标
+      icon?.let {
+        val uri = when (it) {
+          is String -> it
+          is Map<*, *> -> it["uri"] as? String
+          else -> null
+        }
+        uri?.let { iconUri ->
+          loadMarkerIcon(iconUri, iconWidth, iconHeight) { bitmap ->
+            mainHandler.post {
+              marker?.setIcon(BitmapDescriptorFactory.fromBitmap(bitmap))
+            }
+          }
+        }
+      }
+      
+      // 设置事件监听器（只设置一次）
+      setupMarkerListeners()
     }
+  }
+  
+  private fun setupMarkerListeners() {
+    aMap.setOnMarkerClickListener { marker ->
+      markerIdMap[marker]?.let { id ->
+        onMarkerPress?.invoke(id, marker.position.latitude, marker.position.longitude)
+      }
+      false // 返回 false 允许显示 InfoWindow
+    }
+    
+    aMap.setOnMarkerDragListener(object : AMap.OnMarkerDragListener {
+      override fun onMarkerDragStart(marker: com.amap.api.maps.model.Marker?) {
+        marker?.let { m ->
+          markerIdMap[m]?.let { id ->
+            onMarkerDragStart?.invoke(id, m.position.latitude, m.position.longitude)
+          }
+        }
+      }
+      
+      override fun onMarkerDrag(marker: com.amap.api.maps.model.Marker?) {
+        marker?.let { m ->
+          markerIdMap[m]?.let { id ->
+            onMarkerDrag?.invoke(id, m.position.latitude, m.position.longitude)
+          }
+        }
+      }
+      
+      override fun onMarkerDragEnd(marker: com.amap.api.maps.model.Marker?) {
+        marker?.let { m ->
+          markerIdMap[m]?.let { id ->
+            onMarkerDragEnd?.invoke(id, m.position.latitude, m.position.longitude)
+          }
+        }
+      }
+    })
+  }
+  
+  private fun loadMarkerIcon(uri: String, width: Int, height: Int, callback: (Bitmap) -> Unit) {
+    Thread {
+      try {
+        Log.d(TAG, "开始加载图标: $uri")
+        val bitmap = when {
+          uri.startsWith("http://") || uri.startsWith("https://") -> {
+            Log.d(TAG, "加载网络图片")
+            BitmapFactory.decodeStream(URL(uri).openStream())
+          }
+          uri.startsWith("file://") -> {
+            Log.d(TAG, "加载本地文件")
+            BitmapFactory.decodeFile(uri.substring(7))
+          }
+          else -> {
+            Log.d(TAG, "未知 URI 格式")
+            null
+          }
+        }
+        
+        if (bitmap == null) {
+          Log.e(TAG, "图标加载失败: bitmap 为 null")
+        } else {
+          Log.d(TAG, "图标加载成功: ${bitmap.width}x${bitmap.height}")
+          val resized = Bitmap.createScaledBitmap(bitmap, width, height, true)
+          callback(resized)
+        }
+      } catch (e: Exception) {
+        Log.e(TAG, "图标加载异常: ${e.message}", e)
+      }
+    }.start()
   }
   
   fun removeMarker(id: String) {
     markers[id]?.let { marker ->
+      markerIdMap.remove(marker)
       marker.remove()
       markers.remove(id)
     }
@@ -123,7 +247,15 @@ class OverlayManager(private val aMap: AMap) {
       @Suppress("UNCHECKED_CAST")
       val position = props["position"] as? Map<String, Double>
       val title = props["title"] as? String
+      val snippet = props["snippet"] as? String
       val draggable = props["draggable"] as? Boolean
+      val icon = props["icon"]
+      val iconWidth = dpToPx((props["iconWidth"] as? Number)?.toFloat() ?: 40f)
+      val iconHeight = dpToPx((props["iconHeight"] as? Number)?.toFloat() ?: 40f)
+      val opacity = props["opacity"] as? Number
+      val flat = props["flat"] as? Boolean
+      val zIndex = props["zIndex"] as? Number
+      val anchor = props["anchor"] as? Map<String, Double>
       
       position?.let {
         val lat = it["latitude"] ?: 0.0
@@ -132,7 +264,32 @@ class OverlayManager(private val aMap: AMap) {
       }
       
       title?.let { marker.title = it }
+      snippet?.let { marker.snippet = it }
       draggable?.let { marker.isDraggable = it }
+      opacity?.let { marker.alpha = it.toFloat() }
+      flat?.let { marker.isFlat = it }
+      zIndex?.let { marker.zIndex = it.toFloat() }
+      
+      anchor?.let {
+        val x = (it["x"] as? Number)?.toFloat() ?: 0.5f
+        val y = (it["y"] as? Number)?.toFloat() ?: 1.0f
+        marker.setAnchor(x, y)
+      }
+      
+      icon?.let {
+        val uri = when (it) {
+          is String -> it
+          is Map<*, *> -> it["uri"] as? String
+          else -> null
+        }
+        uri?.let { iconUri ->
+          loadMarkerIcon(iconUri, iconWidth, iconHeight) { bitmap ->
+            mainHandler.post {
+              marker.setIcon(BitmapDescriptorFactory.fromBitmap(bitmap))
+            }
+          }
+        }
+      }
     }
   }
   
@@ -142,12 +299,12 @@ class OverlayManager(private val aMap: AMap) {
     
     @Suppress("UNCHECKED_CAST")
     val points = props["points"] as? List<Map<String, Double>>
-    val width = (props["strokeWidth"] as? Number)?.toFloat() ?: 10f
+    val width = (props["width"] as? Number)?.toFloat() ?: (props["strokeWidth"] as? Number)?.toFloat() ?: 10f
     val texture = props["texture"] as? String
     val color = if (!texture.isNullOrEmpty()) {
       android.graphics.Color.TRANSPARENT
     } else {
-      ColorParser.parseColor(props["strokeColor"])
+      ColorParser.parseColor(props["color"] ?: props["strokeColor"])
     }
     
     if (points != null && points.size >= 2) {
@@ -287,9 +444,22 @@ class OverlayManager(private val aMap: AMap) {
   /**
    * 清理所有覆盖物
    */
+  /**
+   * 检查点击位置是否在某个圆形内
+   */
+  fun checkCirclePress(latLng: LatLng): String? {
+    for ((circle, id) in circleIdMap) {
+      if (circle.contains(latLng)) {
+        return id
+      }
+    }
+    return null
+  }
+  
   fun clear() {
     circles.values.forEach { it.remove() }
     circles.clear()
+    circleIdMap.clear()
     
     markers.values.forEach { it.remove() }
     markers.clear()
@@ -299,5 +469,13 @@ class OverlayManager(private val aMap: AMap) {
     
     polygons.values.forEach { it.remove() }
     polygons.clear()
+  }
+  
+  /**
+   * 将 dp 转换为 px
+   */
+  private fun dpToPx(dp: Float): Int {
+    val density = context.resources.displayMetrics.density
+    return (dp * density + 0.5f).toInt()
   }
 }

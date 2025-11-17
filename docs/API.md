@@ -203,6 +203,46 @@ configure({
 |------|------|--------|------|
 | `coordinateConvert` | `coordinate, type` | `Promise<LatLng>` | 坐标转换为高德坐标 |
 
+## 覆盖物组件
+
+### Marker (标记点)
+
+#### 属性
+
+| 属性 | 类型 | 平台 | 默认值 | 说明 |
+|------|------|------|--------|------|
+| `position` | `LatLng` | 全平台 | - | 标记点坐标（必需） |
+| `title` | `string` | 全平台 | - | 标题 |
+| `snippet` | `string` | 全平台 | - | 描述信息 |
+| `draggable` | `boolean` | 全平台 | `false` | 是否可拖拽 |
+| `icon` | `string \| ImageSourcePropType` | 全平台 | - | 自定义图标 |
+| `iconWidth` | `number` | 全平台 | `40` | 图标宽度（点/dp） |
+| `iconHeight` | `number` | 全平台 | `40` | 图标高度（点/dp） |
+| `opacity` | `number` | 仅 Android | `1.0` | 透明度 [0, 1] |
+| `flat` | `boolean` | 仅 Android | `false` | 是否平贴地图 |
+| `zIndex` | `number` | 仅 Android | `0` | 层级 |
+| `anchor` | `Point` | 仅 Android | `{x: 0.5, y: 1.0}` | 锚点比例 |
+| `centerOffset` | `Point` | 仅 iOS | - | 中心偏移 |
+| `animatesDrop` | `boolean` | 仅 iOS | `false` | 是否显示掉落动画 |
+| `pinColor` | `'red' \| 'green' \| 'purple'` | 仅 iOS | `'red'` | 大头针颜色 |
+
+#### 事件
+
+| 事件 | 参数 | 说明 |
+|------|------|------|
+| `onPress` | `() => void` | 点击标记点 |
+| `onDragStart` | `() => void` | 开始拖拽 |
+| `onDrag` | `() => void` | 拖拽中 |
+| `onDragEnd` | `(event: { nativeEvent: LatLng }) => void` | 拖拽结束 |
+
+> **⚠️ 重要提示**：事件回调仅在**声明式用法**中有效。使用命令式 API（`addMarker`）添加的标记点无法触发这些事件。
+
+#### 图标说明
+
+- **图标格式**：支持网络图片（http/https）、本地文件（使用 `Image.resolveAssetSource()`）
+- **尺寸单位**：`iconWidth` 和 `iconHeight` 使用点(points)作为单位，在不同密度屏幕上会自动缩放
+- **锚点**：`anchor` 定义图标相对于坐标点的位置，`{x: 0.5, y: 1.0}` 表示图标底部中心对齐坐标点
+
 ## 类型定义
 
 ### MapType

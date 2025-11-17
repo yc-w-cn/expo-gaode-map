@@ -43,17 +43,29 @@ class PolylineView: ExpoView {
      * 更新折线覆盖物
      */
     private func updatePolyline() {
-        guard let mapView = mapView else { return }
+        guard let mapView = mapView else {
+            print("❌ PolylineView.updatePolyline: mapView 为空")
+            return
+        }
         if let old = polyline { mapView.remove(old) }
         
         var coords = points.compactMap { point -> CLLocationCoordinate2D? in
             guard let lat = point["latitude"], let lng = point["longitude"] else { return nil }
             return CLLocationCoordinate2D(latitude: lat, longitude: lng)
         }
-        guard !coords.isEmpty else { return }
+        guard !coords.isEmpty else {
+            print("❌ PolylineView.updatePolyline: 点数组为空")
+            return
+        }
+        
+        print("🔷 PolylineView.updatePolyline: points=\(coords.count)个点")
+        print("🔷 PolylineView.updatePolyline: strokeColor=\(String(describing: strokeColor)), strokeWidth=\(strokeWidth), texture=\(String(describing: textureUrl))")
         
         polyline = MAPolyline(coordinates: &coords, count: UInt(coords.count))
         mapView.add(polyline!)
+        
+        renderer = nil
+        print("🔷 PolylineView.updatePolyline: renderer 已清空")
     }
     
     /**
@@ -66,10 +78,15 @@ class PolylineView: ExpoView {
             renderer?.lineWidth = CGFloat(strokeWidth)
             
             if let url = textureUrl {
+                print("🔷 PolylineView.getRenderer: 加载纹理 \(url)")
                 loadTexture(url: url, renderer: renderer!)
             } else {
-                renderer?.strokeColor = ColorParser.parseColor(strokeColor) ?? UIColor.clear
+                let parsedColor = ColorParser.parseColor(strokeColor)
+                renderer?.strokeColor = parsedColor ?? UIColor.clear
+                print("🔷 PolylineView.getRenderer: 创建新 renderer, strokeColor=\(String(describing: parsedColor)), lineWidth=\(strokeWidth)")
             }
+        } else {
+            print("🔷 PolylineView.getRenderer: 使用缓存的 renderer")
         }
         return renderer!
     }
@@ -126,7 +143,6 @@ class PolylineView: ExpoView {
      */
     func setPoints(_ points: [[String: Double]]) {
         self.points = points
-        renderer = nil
         updatePolyline()
     }
     
@@ -135,6 +151,7 @@ class PolylineView: ExpoView {
      * @param width 线宽值
      */
     func setStrokeWidth(_ width: Float) {
+        print("🔷 PolylineView.setStrokeWidth: \(width)")
         strokeWidth = width
         renderer = nil
         updatePolyline()
@@ -145,6 +162,7 @@ class PolylineView: ExpoView {
      * @param color 颜色值
      */
     func setStrokeColor(_ color: Any?) {
+        print("🔷 PolylineView.setStrokeColor: \(String(describing: color))")
         strokeColor = color
         renderer = nil
         updatePolyline()
@@ -155,6 +173,7 @@ class PolylineView: ExpoView {
      * @param url 图片 URL
      */
     func setTexture(_ url: String?) {
+        print("🔷 PolylineView.setTexture: \(String(describing: url))")
         textureUrl = url
         renderer = nil
         updatePolyline()

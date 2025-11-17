@@ -12,6 +12,7 @@ import {
   getCurrentLocation,
   checkLocationPermission,
   requestLocationPermission,
+  MarkerProps
 } from 'expo-gaode-map';
 import {Image, StyleSheet, View, Text, Button, Alert, Platform, ScrollView, Animated } from 'react-native';
 
@@ -59,7 +60,7 @@ export default function App() {
   const [location, setLocation] = useState<any>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [circles, setCircles] = useState<CircleData[]>([]);
-  const [markers, setMarkers] = useState<MarkerData[]>([]);
+  const [markers, setMarkers] = useState<MarkerProps[]>([]);
   const [polylines, setPolylines] = useState<PolylineData[]>([]);
   const [polygons, setPolygons] = useState<PolygonData[]>([]);
   const [initialPosition, setInitialPosition] = useState<any>(null);
@@ -87,7 +88,7 @@ export default function App() {
         setLocation(loc);
         setInitialPosition({
           target: { latitude: loc.latitude, longitude: loc.longitude },
-          zoom: 15
+          zoom: 18
         });
         
         // 淡入动画
@@ -96,6 +97,7 @@ export default function App() {
           duration: 500,
           useNativeDriver: true,
         }).start();
+       
       } catch (error) {
         console.error('初始化失败:', error);
         setInitialPosition({ target: { latitude: 39.90923, longitude: 116.397428 }, zoom: 18 });
@@ -212,13 +214,15 @@ export default function App() {
     const titles = ['标记A', '标记B', '标记C', '标记D', '标记E'];
     const randomOffset = () => (Math.random() - 0.5) * 0.01; // 随机偏移
     
-    const newMarker: MarkerData = {
-      id: `marker_${Date.now()}`,
+    const newMarker: MarkerProps = {
+      // id: `marker_${Date.now()}`,
       position: {
         latitude: location.latitude + randomOffset(),
         longitude: location.longitude + randomOffset(),
       },
       title: titles[markers.length % titles.length],
+      snippet: '这是一个标记',
+      
       draggable: markers.length % 2 === 0, // 奇偶交替可拖拽
     };
 
@@ -262,7 +266,7 @@ export default function App() {
       id: `polyline_${Date.now()}_${Math.random()}`, // 添加随机数确保唯一性
       points,
       width: 5,
-      color: randomColor,
+      color: '#ffccee',
     };
 
     setPolylines(prev => [...prev, newPolyline]);
@@ -360,30 +364,37 @@ export default function App() {
       {initialPosition ? (
         <Animated.View style={[styles.map, { opacity: fadeAnim }]}>
           <MapView
-          ref={mapRef}
-          style={styles.map}
-          myLocationEnabled={true}
-          indoorViewEnabled={true}
-          trafficEnabled={true}
-          mapType={0}
-          userLocationRepresentation={{}}
-          onMapPress={() => console.log('onMapPress:')}
-          onMapLongPress={() => console.log('onMapLongPress')}
-          compassEnabled={false}
-          tiltGesturesEnabled={false}
-          initialCameraPosition={initialPosition}
-          minZoom={10}
-          maxZoom={20}
-          onLoad={() => console.log('地图加载完成')}
+            ref={mapRef}
+            style={styles.map}
+            myLocationEnabled={true}
+            indoorViewEnabled={true}
+            trafficEnabled={true}
+            mapType={0}
+            userLocationRepresentation={{}}
+            onMapPress={() => console.log('onMapPress:')}
+            onMapLongPress={() => console.log('onMapLongPress')}
+            compassEnabled={false}
+            tiltGesturesEnabled={false}
+            initialCameraPosition={initialPosition}
+            minZoom={10}
+            maxZoom={20}
+            onLoad={() => console.log('地图加载完成')}
         >
-          {markers.map((marker) => (
+          {markers.map((marker, index) => (
             <Marker
-              key={marker.id}
+              key={`marker_${index}`}
               position={marker.position}
               title={marker.title}
+              snippet={marker.snippet}
               draggable={marker.draggable}
+              onPress={() => Alert.alert('标记点击', `点击了 ${marker.title}`)}
+              onDragEnd={(e) => {
+                console.log('拖拽结束:', e.nativeEvent);
+                Alert.alert('拖拽结束', `${marker.title} 新位置: ${e.nativeEvent.latitude.toFixed(6)}, ${e.nativeEvent.longitude.toFixed(6)}`);
+              }}
             />
           ))}
+          
           {polygons.map((polygon) => (
             <Polygon
               key={polygon.id}
@@ -402,7 +413,80 @@ export default function App() {
               texture={polyline.texture}
             />
           ))}
-          {circles.map((circle) => (
+          {/* 静态 Marker 示例 - 展示各种属性 */}
+          {/* <Marker
+            key={'marker_static_1'}
+            position={{
+              latitude: 39.9,
+              longitude: 116.4,
+            }}
+            title={'北京天安门'}
+            snippet={'这是一个可拖拽的标记点'}
+            draggable={true}
+            pinColor={'purple'}
+            icon={iconUri}
+            iconWidth={50}
+            iconHeight={50}  
+            onPress={() =>{
+              console.log('点击标记点');
+            }}
+            onDragEnd={(e) => {
+              console.log('拖拽结束:', e.nativeEvent);
+              Alert.alert('拖拽结束', `新位置: ${e.nativeEvent.latitude.toFixed(6)}, ${e.nativeEvent.longitude.toFixed(6)}`);
+            }}
+          /> */}
+          
+          {/* iOS 特有属性示例 */}
+          {/* {Platform.OS === 'ios' && (
+            <Marker
+              key={'marker_static_2'}
+              position={{
+                latitude: 39.92,
+                longitude: 116.42,
+              }}
+              title={'iOS 专属样式'}
+              pinColor={'green'}
+              animatesDrop={true}
+            />
+            
+          )} */}
+          {/* 文档示例 1: 静态 Circle */}
+          <Circle
+            center={{ latitude: 39.9, longitude: 116.4 }}
+            radius={1000}
+            fillColor="#8800FF00"
+            strokeColor="#FFFF0000"
+            strokeWidth={2}
+            onPress={() => console.log('点击圆形')}
+          />
+          
+          {/* 文档示例 2: 静态 Polygon */}
+          <Polygon
+            points={[
+              { latitude: 39.9, longitude: 116.3 },
+              { latitude: 39.9, longitude: 116.4 },
+              { latitude: 39.8, longitude: 116.4 },
+              { latitude: 39.8, longitude: 116.3 },
+            ]}
+            fillColor="red"
+            strokeColor="#000"
+            strokeWidth={5}
+            onPress={() => console.log('点击多边形')}
+          />
+          
+          {/* 文档示例 3: 静态 Polyline */}
+          <Polyline
+            points={[
+              { latitude: 39.9, longitude: 116.4 },
+              { latitude: 39.95, longitude: 116.45 },
+              { latitude: 40.0, longitude: 116.5 },
+            ]}
+            width={10}
+            color="#eeffcc"
+            onPress={() => console.log('点击折线')}
+          />
+       
+          {/* {circles.map((circle) => (
             <Circle
               key={circle.id}
               center={circle.center}
@@ -410,8 +494,10 @@ export default function App() {
               fillColor={circle.fillColor}
               strokeColor={circle.strokeColor}
               strokeWidth={circle.strokeWidth}
+               onPress={() => console.log('点击圆形')}
             />
-          ))}
+
+          ))} */}
           </MapView>
         </Animated.View>
       ) : (
@@ -595,5 +681,18 @@ const styles = StyleSheet.create({
   },
   buttonSpacer: {
     height: 10,
+  },
+  markerContainer:{
+     backgroundColor: 'white',
+    borderRadius: 5,
+    padding: 5,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#ddd",
+  },
+    markerText: {
+    fontSize: 12,
+    color: '#333',
+    fontWeight: "600",
   },
 });

@@ -12,12 +12,10 @@ class ColorParser {
     static func parseColor(_ colorValue: Any?) -> UIColor? {
         guard let colorValue = colorValue else { return nil }
         
-        // 如果是数字类型
         if let number = colorValue as? Int {
             return UIColor(hex: number)
         }
         
-        // 如果是字符串类型
         if let string = colorValue as? String {
             return parseColorString(string)
         }
@@ -79,12 +77,10 @@ class ColorParser {
             var hexNumber: UInt64 = 0
             
             if scanner.scanHexInt64(&hexNumber) {
-                // 尝试 ARGB 格式（Android 风格）
                 let alphaARGB = CGFloat((hexNumber & 0xff000000) >> 24) / 255
                 let redARGB = CGFloat((hexNumber & 0x00ff0000) >> 16) / 255
                 let greenARGB = CGFloat((hexNumber & 0x0000ff00) >> 8) / 255
                 let blueARGB = CGFloat(hexNumber & 0x000000ff) / 255
-                
                 return UIColor(red: redARGB, green: greenARGB, blue: blueARGB, alpha: alphaARGB)
             }
         }
@@ -98,7 +94,6 @@ class ColorParser {
                 let red = CGFloat((hexNumber & 0xff0000) >> 16) / 255
                 let green = CGFloat((hexNumber & 0x00ff00) >> 8) / 255
                 let blue = CGFloat(hexNumber & 0x0000ff) / 255
-                
                 return UIColor(red: red, green: green, blue: blue, alpha: alpha)
             }
         }

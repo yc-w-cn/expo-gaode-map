@@ -1,3 +1,4 @@
+
 import * as React from 'react';
 import { MapContext } from '../../ExpoGaodeMapView';
 import type { PolylineProps } from '../../types';
@@ -21,24 +22,38 @@ import type { PolylineProps } from '../../types';
 export default function Polyline(props: PolylineProps) {
   const mapRef = React.useContext(MapContext);
   const polylineIdRef = React.useRef<string | null>(null);
-
-  // 添加折线
+  const propsRef = React.useRef(props);
+  
   React.useEffect(() => {
-    const polylineId = `polyline_${Date.now()}_${Math.random()}`;
-    polylineIdRef.current = polylineId;
-    
-    // 只传递必要的属性
-    const polylineProps = {
-      points: props.points,
-      width: props.width,
-      color: props.color,
-      ...(props.texture && { texture: props.texture }),
+    propsRef.current = props;
+  }, [props]);
+  
+  React.useEffect(() => {
+    const checkAndAdd = () => {
+      if (!mapRef?.current) {
+        setTimeout(checkAndAdd, 50);
+        return;
+      }
+      
+      const polylineId = `polyline_${Date.now()}_${Math.random()}`;
+      polylineIdRef.current = polylineId;
+      
+      const polylineProps = {
+        points: propsRef.current.points,
+        width: propsRef.current.width,
+        color: propsRef.current.color,
+        ...(propsRef.current.texture && { texture: propsRef.current.texture }),
+      };
+      
+      mapRef.current.addPolyline(polylineId, polylineProps);
     };
     
-    mapRef?.current?.addPolyline?.(polylineId, polylineProps);
-
+    checkAndAdd();
+    
     return () => {
-      mapRef?.current?.removePolyline?.(polylineId);
+      if (polylineIdRef.current && mapRef?.current) {
+        mapRef.current.removePolyline(polylineIdRef.current);
+      }
     };
   }, []);
 

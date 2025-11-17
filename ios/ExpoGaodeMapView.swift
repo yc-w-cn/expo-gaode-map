@@ -59,6 +59,11 @@ class ExpoGaodeMapView: ExpoView, MAMapViewDelegate {
     let onMapPress = EventDispatcher()
     let onMapLongPress = EventDispatcher()
     let onLoad = EventDispatcher()
+    let onMarkerPress = EventDispatcher()
+    let onMarkerDragStart = EventDispatcher()
+    let onMarkerDrag = EventDispatcher()
+    let onMarkerDragEnd = EventDispatcher()
+    let onCirclePress = EventDispatcher()
     
     // MARK: - 私有属性
     
@@ -72,6 +77,8 @@ class ExpoGaodeMapView: ExpoView, MAMapViewDelegate {
     private var overlayManager: OverlayManager!
     /// 地图是否已加载完成
     private var isMapLoaded = false
+    /// 是否正在处理 annotation 选择事件
+    private var isHandlingAnnotationSelect = false
     
     // MARK: - 初始化
     
@@ -91,6 +98,11 @@ class ExpoGaodeMapView: ExpoView, MAMapViewDelegate {
         uiManager = UIManager(mapView: mapView)
         overlayManager = OverlayManager(mapView: mapView)
         
+        // 设置 Circle 点击回调
+        overlayManager.onCirclePress = { [weak self] event in
+            self?.onCirclePress(event)
+        }
+        
         setupDefaultConfig()
     }
     
@@ -106,13 +118,19 @@ class ExpoGaodeMapView: ExpoView, MAMapViewDelegate {
     override func addSubview(_ view: UIView) {
         super.addSubview(view)
         
+        print("🔧 添加子视图: \(type(of: view))")
+        
         if let markerView = view as? MarkerView {
+            print("✅ 识别为 MarkerView")
             markerView.setMap(mapView)
         } else if let circleView = view as? CircleView {
+            print("✅ 识别为 CircleView")
             circleView.setMap(mapView)
         } else if let polylineView = view as? PolylineView {
+            print("✅ 识别为 PolylineView")
             polylineView.setMap(mapView)
         } else if let polygonView = view as? PolygonView {
+            print("✅ 识别为 PolygonView")
             polygonView.setMap(mapView)
         } else if let heatMapView = view as? HeatMapView {
             heatMapView.setMap(mapView)
@@ -315,7 +333,62 @@ extension ExpoGaodeMapView {
      * 地图单击事件
      */
     public func mapView(_ mapView: MAMapView, didSingleTappedAt coordinate: CLLocationCoordinate2D) {
+        // 如果正在处理 annotation 选择，跳过地图点击事件
+        if isHandlingAnnotationSelect {
+            isHandlingAnnotationSelect = false
+            return
+        }
+        
+        // 检查是否点击了圆形 (声明式 CircleView)
+        if checkCirclePress(at: coordinate) {
+            return
+        }
+        
+        // 检查是否点击了圆形 (命令式 API)
+        if overlayManager.checkCirclePress(at: coordinate) {
+            return
+        }
+        
         onMapPress(["latitude": coordinate.latitude, "longitude": coordinate.longitude])
+    }
+    
+    /**
+     * 检查点击位置是否在圆形内
+     */
+    private func checkCirclePress(at coordinate: CLLocationCoordinate2D) -> Bool {
+        let circleViews = subviews.compactMap { $0 as? CircleView }
+        print("🔍 检查圆形点击 - 找到 \(circleViews.count) 个 CircleView")
+        
+        for circleView in circleViews {
+            guard let circle = circleView.circle else {
+                print("⚠️ CircleView 没有 circle 对象")
+                continue
+            }
+            
+            let circleCenter = circle.coordinate
+            let distance = calculateDistance(from: coordinate, to: circleCenter)
+            print("📍 圆心: (\(circleCenter.latitude), \(circleCenter.longitude)), 半径: \(circle.radius)m, 距离: \(distance)m")
+            
+            if distance <= circle.radius {
+                print("✅ 点击在圆形内，触发 onPress")
+                circleView.onPress([
+                    "latitude": coordinate.latitude,
+                    "longitude": coordinate.longitude
+                ])
+                return true
+            }
+        }
+        print("❌ 点击不在任何圆形内")
+        return false
+    }
+    
+    /**
+     * 计算两点间距离(米)
+     */
+    private func calculateDistance(from: CLLocationCoordinate2D, to: CLLocationCoordinate2D) -> Double {
+        let fromLocation = CLLocation(latitude: from.latitude, longitude: from.longitude)
+        let toLocation = CLLocation(latitude: to.latitude, longitude: to.longitude)
+        return fromLocation.distance(from: toLocation)
     }
     
     /**
@@ -335,13 +408,63 @@ extension ExpoGaodeMapView {
         }
         
         if annotation.isKind(of: MAPointAnnotation.self) {
-            let identifier = "marker"
-            var view = mapView.dequeueReusableAnnotationView(withIdentifier: identifier)
-            if view == nil {
-                view = MAPinAnnotationView(annotation: annotation, reuseIdentifier: identifier)
+            guard let props = overlayManager.getMarkerProps(for: annotation) else {
+                return nil
             }
-            view?.canShowCallout = true
-            return view
+            
+            let iconUri = props["icon"] as? String
+            let iconWidth = props["iconWidth"] as? Double ?? 40
+            let iconHeight = props["iconHeight"] as? Double ?? 40
+            let pinColor = props["pinColor"] as? String ?? "red"
+            let draggable = props["draggable"] as? Bool ?? false
+            
+            // 如果有自定义图标，使用 MAAnnotationView
+            if let iconUri = iconUri, !iconUri.isEmpty {
+                var annotationView = mapView.dequeueReusableAnnotationView(withIdentifier: "custom_marker")
+                if annotationView == nil {
+                    annotationView = MAAnnotationView(annotation: annotation, reuseIdentifier: "custom_marker")
+                }
+                annotationView?.annotation = annotation
+                annotationView?.canShowCallout = true
+                annotationView?.isDraggable = draggable
+                
+                // 加载图标
+                loadMarkerIcon(iconUri: iconUri) { image in
+                    if let img = image {
+                        // 调整图标大小
+                        let size = CGSize(width: iconWidth, height: iconHeight)
+                        UIGraphicsBeginImageContextWithOptions(size, false, 0.0)
+                        img.draw(in: CGRect(origin: .zero, size: size))
+                        let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
+                        UIGraphicsEndImageContext()
+                        
+                        annotationView?.image = resizedImage
+                        // 设置中心点偏移，使标注底部中间点成为经纬度对应点
+                        annotationView?.centerOffset = CGPoint(x: 0, y: -iconHeight / 2)
+                    }
+                }
+                
+                return annotationView
+            }
+            
+            // 使用大头针样式
+            guard let pinView = MAPinAnnotationView(annotation: annotation, reuseIdentifier: "pin_marker") else {
+                return nil
+            }
+            pinView.canShowCallout = true
+            pinView.animatesDrop = true
+            pinView.isDraggable = draggable
+            
+            // 设置大头针颜色
+            if pinColor == "green" {
+                pinView.pinColor = .green
+            } else if pinColor == "purple" {
+                pinView.pinColor = .purple
+            } else {
+                pinView.pinColor = .red
+            }
+            
+            return pinView
         }
         return nil
     }
@@ -352,7 +475,7 @@ extension ExpoGaodeMapView {
      */
     public func mapView(_ mapView: MAMapView, rendererFor overlay: MAOverlay) -> MAOverlayRenderer {
         for subview in subviews {
-            if let circleView = subview as? CircleView, circleView.circle === overlay {
+            if let circleView = subview as? CircleView, let circle = circleView.circle, circle === overlay {
                 return circleView.getRenderer()
             } else if let polylineView = subview as? PolylineView, polylineView.polyline === overlay {
                 return polylineView.getRenderer()
@@ -362,5 +485,85 @@ extension ExpoGaodeMapView {
         }
         
         return overlayManager.getRenderer(for: overlay) ?? MAOverlayRenderer(overlay: overlay)
+    }
+    
+    /**
+     * 标注点击事件
+     */
+    public func mapView(_ mapView: MAMapView, didSelect view: MAAnnotationView) {
+        guard let annotation = view.annotation, !annotation.isKind(of: MAUserLocation.self) else {
+            return
+        }
+        
+        // 标记正在处理 annotation 选择，阻止地图点击事件
+        isHandlingAnnotationSelect = true
+        
+        // 查找对应的 markerId
+        if let markerId = overlayManager.getMarkerId(for: annotation) {
+            onMarkerPress([
+                "markerId": markerId,
+                "latitude": annotation.coordinate.latitude,
+                "longitude": annotation.coordinate.longitude
+            ])
+        }
+        
+        // 不要立即取消选中，让气泡有机会显示
+        // 用户点击地图其他地方时会自动取消选中
+    }
+    
+    /**
+     * 标注拖拽状态变化
+     */
+    public func mapView(_ mapView: MAMapView, annotationView view: MAAnnotationView, didChange newState: MAAnnotationViewDragState, fromOldState oldState: MAAnnotationViewDragState) {
+        guard let annotation = view.annotation else { return }
+        
+        if let markerId = overlayManager.getMarkerId(for: annotation) {
+            let coord = annotation.coordinate
+            let event: [String: Any] = [
+                "markerId": markerId,
+                "latitude": coord.latitude,
+                "longitude": coord.longitude
+            ]
+            
+            switch newState {
+            case .starting:
+                onMarkerDragStart(event)
+            case .dragging:
+                onMarkerDrag(event)
+            case .ending, .canceling:
+                onMarkerDragEnd(event)
+            default:
+                break
+            }
+        }
+    }
+    
+    /**
+     * 加载标记图标
+     * @param iconUri 图标 URI (支持 http/https/file/本地资源)
+     * @param completion 加载完成回调
+     */
+    private func loadMarkerIcon(iconUri: String, completion: @escaping (UIImage?) -> Void) {
+        if iconUri.hasPrefix("http://") || iconUri.hasPrefix("https://") {
+            // 网络图片
+            guard let url = URL(string: iconUri) else {
+                completion(nil)
+                return
+            }
+            URLSession.shared.dataTask(with: url) { data, _, _ in
+                guard let data = data, let image = UIImage(data: data) else {
+                    DispatchQueue.main.async { completion(nil) }
+                    return
+                }
+                DispatchQueue.main.async { completion(image) }
+            }.resume()
+        } else if iconUri.hasPrefix("file://") {
+            // 本地文件
+            let path = String(iconUri.dropFirst(7))
+            completion(UIImage(contentsOfFile: path))
+        } else {
+            // 资源文件名
+            completion(UIImage(named: iconUri))
+        }
     }
 }

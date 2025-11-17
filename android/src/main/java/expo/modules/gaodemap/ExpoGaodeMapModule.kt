@@ -271,7 +271,7 @@ class ExpoGaodeMapModule : Module() {
     View(ExpoGaodeMapView::class) {
       
       // 事件
-      Events("onMapPress", "onMapLongPress", "onLoad")
+      Events("onMapPress", "onMapLongPress", "onLoad", "onMarkerPress", "onMarkerDragStart", "onMarkerDrag", "onMarkerDragEnd", "onCirclePress")
 
       // 地图类型
       Prop<Int>("mapType") { view, type ->
@@ -415,6 +415,22 @@ class ExpoGaodeMapModule : Module() {
       
       Prop<Boolean>("draggable") { view: MarkerView, draggable ->
         view.setDraggable(draggable)
+      }
+      
+      Prop<Float>("opacity") { view: MarkerView, opacity ->
+        view.setOpacity(opacity)
+      }
+      
+      Prop<Boolean>("flat") { view: MarkerView, flat ->
+        view.setFlat(flat)
+      }
+      
+      Prop<Float>("zIndex") { view: MarkerView, zIndex ->
+        view.setZIndex(zIndex)
+      }
+      
+      Prop<Map<String, Float>>("anchor") { view: MarkerView, anchor ->
+        view.setAnchor(anchor)
       }
     }
     

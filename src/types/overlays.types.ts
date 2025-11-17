@@ -18,7 +18,17 @@ export interface MarkerProps {
   /**
    * 图标
    */
-  icon?: ImageSourcePropType;
+  icon?: string | ImageSourcePropType;
+
+  /**
+   * 图标宽度（像素）
+   */
+  iconWidth?: number;
+
+  /**
+   * 图标高度（像素）
+   */
+  iconHeight?: number;
 
   /**
    * 标题
@@ -33,6 +43,7 @@ export interface MarkerProps {
   /**
    * 透明度 [0, 1]
    * @platform android
+   * @note iOS 不支持
    */
   opacity?: number;
 
@@ -44,17 +55,21 @@ export interface MarkerProps {
   /**
    * 是否平贴地图
    * @platform android
+   * @note iOS 不支持
    */
   flat?: boolean;
 
   /**
    * 层级
+   * @platform android
+   * @note iOS 不支持 (使用 displayPriority)
    */
   zIndex?: number;
 
   /**
    * 覆盖物锚点比例
    * @platform android
+   * @note iOS 使用 centerOffset
    */
   anchor?: Point;
 
@@ -65,7 +80,20 @@ export interface MarkerProps {
   centerOffset?: Point;
 
   /**
+   * 是否显示动画
+   * @platform ios
+   */
+  animatesDrop?: boolean;
+
+  /**
+   * 大头针颜色
+   * @platform ios
+   */
+  pinColor?: 'red' | 'green' | 'purple';
+
+  /**
    * 自定义视图
+   * @note 未实现
    */
   children?: React.ReactNode;
 
@@ -219,6 +247,7 @@ export interface CircleProps {
    * 点击事件
    */
   onPress?: () => void;
+
 }
 
 /**
