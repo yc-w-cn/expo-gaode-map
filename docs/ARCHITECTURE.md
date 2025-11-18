@@ -1,5 +1,7 @@
 # 项目架构文档
 
+[English](./ARCHITECTURE.en.md) | 简体中文
+
 本文档详细说明了 expo-gaode-map 项目的代码结构和各个文件的职责。
 
 ## 目录结构概览

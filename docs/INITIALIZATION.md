@@ -1,5 +1,7 @@
 # 初始化指南
 
+[English](./INITIALIZATION.en.md) | 简体中文
+
 本文档详细说明如何正确初始化和配置 expo-gaode-map。
 
 ## 目录

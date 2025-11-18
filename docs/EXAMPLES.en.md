@@ -1,22 +1,22 @@
-# 使用示例
+# Usage Examples
 
-[English](./EXAMPLES.en.md) | 简体中文
+English | [简体中文](./EXAMPLES.md)
 
-完整的使用示例和最佳实践。
+Complete usage examples and best practices.
 
-> 📖 **推荐阅读**: [初始化指南](./INITIALIZATION.md) - 详细的初始化流程和权限处理
+> 📖 **Recommended Reading**: [Initialization Guide](./INITIALIZATION.en.md) - Detailed initialization process and permission handling
 
-## 目录
+## Table of Contents
 
-- [完整应用示例](#完整应用示例)
-- [基础地图应用](#基础地图应用)
-- [定位追踪应用](#定位追踪应用)
-- [覆盖物示例](#覆盖物示例)
-- [高级用法](#高级用法)
+- [Complete Application Example](#complete-application-example)
+- [Basic Map Application](#basic-map-application)
+- [Location Tracking Application](#location-tracking-application)
+- [Overlay Examples](#overlay-examples)
+- [Advanced Usage](#advanced-usage)
 
-## 完整应用示例
+## Complete Application Example
 
-包含权限管理、错误处理和加载状态的完整示例:
+Complete example with permission management, error handling, and loading states:
 
 ```tsx
 import { useEffect, useState } from 'react';
@@ -40,34 +40,34 @@ export default function App() {
   useEffect(() => {
     const initialize = async () => {
       try {
-        // 1. 初始化 SDK
+        // 1. Initialize SDK
         initSDK({
           androidKey: 'your-android-api-key',
           iosKey: 'your-ios-api-key',
         });
         
-        // 2. 检查权限
+        // 2. Check permission
         const status = await checkLocationPermission();
         
-        // 3. 请求权限（如果需要）
+        // 3. Request permission if needed
         if (!status.granted) {
           const result = await requestLocationPermission();
           
           if (!result.granted) {
-            // 权限被拒绝
+            // Permission denied
             setInitialPosition({
               target: { latitude: 39.9, longitude: 116.4 },
               zoom: 10
             });
             
-            // 引导用户到设置
+            // Guide user to settings
             if (!result.canAskAgain) {
               Alert.alert(
-                '需要定位权限',
-                '请在设置中开启定位权限',
+                'Location Permission Required',
+                'Please enable location permission in settings',
                 [
-                  { text: '取消' },
-                  { text: '去设置', onPress: () => {
+                  { text: 'Cancel' },
+                  { text: 'Settings', onPress: () => {
                     if (Platform.OS === 'ios') {
                       Linking.openURL('app-settings:');
                     } else {
@@ -81,7 +81,7 @@ export default function App() {
           }
         }
         
-        // 4. 获取位置
+        // 4. Get location
         const location = await getCurrentLocation();
         setInitialPosition({
           target: {
@@ -92,8 +92,8 @@ export default function App() {
         });
         
       } catch (err) {
-        console.error('初始化失败:', err);
-        setError('初始化失败');
+        console.error('Initialization failed:', err);
+        setError('Initialization failed');
         setInitialPosition({
           target: { latitude: 39.9, longitude: 116.4 },
           zoom: 10
@@ -104,16 +104,16 @@ export default function App() {
     initialize();
   }, []);
 
-  // 加载状态
+  // Loading state
   if (!initialPosition && !error) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text>正在加载地图...</Text>
+        <Text>Loading map...</Text>
       </View>
     );
   }
 
-  // 错误状态
+  // Error state
   if (error) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -127,13 +127,13 @@ export default function App() {
       style={{ flex: 1 }}
       initialCameraPosition={initialPosition!}
       myLocationEnabled={true}
-      onLoad={() => console.log('地图加载完成')}
+      onLoad={() => console.log('Map loaded')}
     />
   );
 }
 ```
 
-## 基础地图应用
+## Basic Map Application
 
 ```tsx
 import React, { useRef, useEffect } from 'react';
@@ -158,7 +158,7 @@ export default function App() {
         iosKey: 'your-ios-api-key',
       });
       
-      // 检查并请求权限
+      // Check and request permission
       const status = await checkLocationPermission();
       if (!status.granted) {
         await requestLocationPermission();
@@ -190,10 +190,10 @@ export default function App() {
         myLocationEnabled={true}
         followUserLocation={false}
         trafficEnabled={true}
-        onMapPress={(e) => console.log('点击地图', e)}
-        onLoad={() => console.log('地图加载完成')}
+        onMapPress={(e) => console.log('Map pressed', e)}
+        onLoad={() => console.log('Map loaded')}
       >
-        {/* 圆形覆盖物 */}
+        {/* Circle overlay */}
         <Circle
           center={{ latitude: 39.9, longitude: 116.4 }}
           radius={1000}
@@ -202,25 +202,25 @@ export default function App() {
           strokeWidth={2}
         />
 
-        {/* 标记点 */}
+        {/* Marker */}
         <Marker
           position={{ latitude: 39.95, longitude: 116.45 }}
-          title="这是一个标记"
+          title="This is a marker"
           draggable={true}
         />
 
-        {/* 折线 */}
+        {/* Polyline */}
         <Polyline
           points={[
             { latitude: 39.9, longitude: 116.4 },
             { latitude: 39.95, longitude: 116.45 },
             { latitude: 40.0, longitude: 116.5 },
           ]}
-          strokeWidth={5}
-          strokeColor="#FF0000FF"
+          width={5}
+          color="#FF0000FF"
         />
 
-        {/* 多边形 */}
+        {/* Polygon */}
         <Polygon
           points={[
             { latitude: 39.85, longitude: 116.35 },
@@ -234,7 +234,7 @@ export default function App() {
       </MapView>
 
       <View style={styles.controls}>
-        <Button title="移动相机" onPress={handleMoveCamera} />
+        <Button title="Move Camera" onPress={handleMoveCamera} />
       </View>
     </View>
   );
@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
 });
 ```
 
-## 定位追踪应用
+## Location Tracking Application
 
 ```tsx
 import React, { useEffect, useState } from 'react';
@@ -278,28 +278,28 @@ export default function LocationApp() {
 
   useEffect(() => {
     const initialize = async () => {
-      // 初始化 SDK
+      // Initialize SDK
       initSDK({
         androidKey: 'your-android-api-key',
         iosKey: 'your-ios-api-key',
       });
 
-      // 检查并请求权限
+      // Check and request permission
       const status = await checkLocationPermission();
       if (!status.granted) {
         await requestLocationPermission();
       }
 
-      // 配置定位参数
+      // Configure location parameters
       configure({
         withReGeocode: true,
         mode: 0,
         interval: 2000,
       });
 
-      // 监听位置更新
+      // Listen to location updates
       const subscription = addLocationListener((loc) => {
-        console.log('位置更新:', loc);
+        console.log('Location update:', loc);
         setLocation(loc);
       });
 
@@ -324,7 +324,7 @@ export default function LocationApp() {
       const loc = await getCurrentLocation();
       setLocation(loc);
     } catch (error) {
-      console.error('获取位置失败:', error);
+      console.error('Get location failed:', error);
     }
   };
 
@@ -346,17 +346,17 @@ export default function LocationApp() {
       {location && (
         <View style={styles.info}>
           <Text style={styles.infoText}>
-            纬度: {location.latitude.toFixed(6)}
+            Latitude: {location.latitude.toFixed(6)}
           </Text>
           <Text style={styles.infoText}>
-            经度: {location.longitude.toFixed(6)}
+            Longitude: {location.longitude.toFixed(6)}
           </Text>
           <Text style={styles.infoText}>
-            精度: {location.accuracy.toFixed(2)} 米
+            Accuracy: {location.accuracy.toFixed(2)} m
           </Text>
           {location.address && (
             <Text style={styles.infoText}>
-              地址: {location.address}
+              Address: {location.address}
             </Text>
           )}
         </View>
@@ -364,12 +364,12 @@ export default function LocationApp() {
 
       <View style={styles.controls}>
         <Button 
-          title="获取位置" 
+          title="Get Location" 
           onPress={handleGetLocation} 
         />
         <View style={{ height: 10 }} />
         <Button 
-          title={isTracking ? '停止追踪' : '开始追踪'}
+          title={isTracking ? 'Stop Tracking' : 'Start Tracking'}
           onPress={isTracking ? handleStopTracking : handleStartTracking}
           color={isTracking ? '#FF3B30' : '#007AFF'}
         />
@@ -413,11 +413,11 @@ const styles = StyleSheet.create({
 });
 ```
 
-## 覆盖物示例
+## Overlay Examples
 
-### Circle (圆形)
+### Circle
 
-**声明式用法:**
+**Declarative usage:**
 ```tsx
 <MapView style={{ flex: 1 }}>
   <Circle
@@ -426,12 +426,12 @@ const styles = StyleSheet.create({
     fillColor="#8800FF00"
     strokeColor="#FFFF0000"
     strokeWidth={2}
-    onPress={() => console.log('点击圆形')}
+    onPress={() => console.log('Circle pressed')}
   />
 </MapView>
 ```
 
-**命令式用法:**
+**Imperative usage:**
 ```tsx
 const mapRef = useRef<MapViewRef>(null);
 
@@ -450,30 +450,28 @@ await mapRef.current?.updateCircle('circle1', {
 await mapRef.current?.removeCircle('circle1');
 ```
 
-### Marker (标记点)
+### Marker
 
-#### 基础用法
-
-**声明式用法:**
+**Declarative usage:**
 ```tsx
 <MapView style={{ flex: 1 }}>
   <Marker
     position={{ latitude: 39.9, longitude: 116.4 }}
-    title="标题"
-    snippet="描述信息"
+    title="Title"
+    snippet="Description"
     draggable={true}
-    onPress={() => console.log('点击标记')}
-    onDragEnd={(e) => console.log('拖动结束', e.nativeEvent)}
+    onPress={() => console.log('Marker pressed')}
+    onDragEnd={(e) => console.log('Drag ended', e.nativeEvent)}
   />
 </MapView>
 ```
 
-**命令式用法:**
+**Imperative usage:**
 ```tsx
 await mapRef.current?.addMarker('marker1', {
   position: { latitude: 39.9, longitude: 116.4 },
-  title: '标题',
-  snippet: '描述信息',
+  title: 'Title',
+  snippet: 'Description',
   draggable: true,
 });
 
@@ -484,90 +482,11 @@ await mapRef.current?.updateMarker('marker1', {
 await mapRef.current?.removeMarker('marker1');
 ```
 
-> **⚠️ 限制**：命令式 API 添加的 Marker **不支持事件回调**（onPress, onDragEnd 等）。如需事件处理，请使用声明式 `<Marker>` 组件。
+> **⚠️ Limitation**: Markers added via imperative API **do not support event callbacks** (onPress, onDragEnd, etc.). Use declarative `<Marker>` component for event handling.
 
-#### 自定义图标
+### Polyline
 
-```tsx
-import { Image } from 'react-native';
-
-// 获取本地图片 URI
-const iconUri = Image.resolveAssetSource(require('./assets/marker-icon.png')).uri;
-
-<MapView style={{ flex: 1 }}>
-  <Marker
-    position={{ latitude: 39.9, longitude: 116.4 }}
-    title="自定义图标"
-    icon={iconUri}
-    iconWidth={50}
-    iconHeight={50}
-    onPress={() => console.log('点击自定义图标标记')}
-  />
-</MapView>
-```
-
-> **注意**：
-> - `iconWidth` 和 `iconHeight` 使用点(points)作为单位
-> - 在不同密度屏幕上会自动缩放，保持视觉一致性
-> - 支持网络图片（http/https）和本地图片
-
-#### Android 特有属性
-
-```tsx
-<MapView style={{ flex: 1 }}>
-  <Marker
-    position={{ latitude: 39.9, longitude: 116.4 }}
-    title="Android 特性"
-    opacity={0.8}
-    flat={true}
-    zIndex={10}
-    anchor={{ x: 0.5, y: 1.0 }}
-  />
-</MapView>
-```
-
-#### iOS 特有属性
-
-```tsx
-import { Platform } from 'react-native';
-
-<MapView style={{ flex: 1 }}>
-  {Platform.OS === 'ios' && (
-    <Marker
-      position={{ latitude: 39.9, longitude: 116.4 }}
-      title="iOS 特性"
-      pinColor="green"
-      animatesDrop={true}
-      centerOffset={{ x: 0, y: -20 }}
-    />
-  )}
-</MapView>
-```
-
-#### 拖拽事件处理
-
-> **注意**：事件处理仅在声明式 `<Marker>` 组件中有效
-
-```tsx
-<MapView style={{ flex: 1 }}>
-  <Marker
-    position={{ latitude: 39.9, longitude: 116.4 }}
-    title="可拖拽标记"
-    draggable={true}
-    onDragStart={() => console.log('开始拖拽')}
-    onDrag={() => console.log('拖拽中')}
-    onDragEnd={(e) => {
-      const { latitude, longitude } = e.nativeEvent;
-      console.log(`拖拽结束: ${latitude}, ${longitude}`);
-      Alert.alert('新位置', `纬度: ${latitude.toFixed(6)}\n经度: ${longitude.toFixed(6)}`);
-    }}
-  />
-</MapView>
-```
-
-### Polyline (折线)
-
-**声明式用法 - 普通折线:**
+**Declarative usage - Normal polyline:**
 ```tsx
 <MapView style={{ flex: 1 }}>
   <Polyline
@@ -578,12 +497,12 @@ import { Platform } from 'react-native';
     ]}
     width={5}
     color="#FFFF0000"
-    onPress={() => console.log('点击折线')}
+    onPress={() => console.log('Polyline pressed')}
   />
 </MapView>
 ```
 
-**声明式用法 - 纹理折线:**
+**Declarative usage - Textured polyline:**
 ```tsx
 import { Image } from 'react-native';
 
@@ -599,66 +518,21 @@ const iconUri = Image.resolveAssetSource(require('./assets/arrow.png')).uri;
     width={20}
     color="#FFFF0000"
     texture={iconUri}
-    onPress={() => console.log('点击纹理折线')}
+    onPress={() => console.log('Textured polyline pressed')}
   />
 </MapView>
 ```
 
-**命令式用法:**
-```tsx
-// 普通折线
-await mapRef.current?.addPolyline('polyline1', {
-  points: [
-    { latitude: 39.9, longitude: 116.4 },
-    { latitude: 40.0, longitude: 116.5 },
-  ],
-  width: 5,
-  color: '#FFFF0000',
-});
+> **Note**:
+> - Color format uses ARGB (`#AARRGGBB`), e.g., `#FFFF0000` for opaque red
+> - `texture` supports network images (http/https) and local files (file://)
+> - Texture tiles along the polyline direction
+> - Recommend larger `width` values (e.g., 20) for better texture display
+> - **Segment Texture Limitation**: Single Polyline can only have one texture. For different textures on segments, create multiple Polyline components
 
-// 纹理折线
-await mapRef.current?.addPolyline('polyline2', {
-  points: [
-    { latitude: 39.9, longitude: 116.4 },
-    { latitude: 40.0, longitude: 116.5 },
-  ],
-  width: 20,
-  color: '#FFFF0000',
-  texture: iconUri,
-});
+### Polygon
 
-// 分段纹理示例（使用多个 Polyline）
-const point1 = { latitude: 39.9, longitude: 116.4 };
-const point2 = { latitude: 39.95, longitude: 116.45 };
-const point3 = { latitude: 40.0, longitude: 116.5 };
-
-// 第一段：红色箭头
-await mapRef.current?.addPolyline('segment1', {
-  points: [point1, point2],
-  width: 20,
-  color: '#FFFF0000',
-  texture: redArrowUri,
-});
-
-// 第二段：蓝色箭头
-await mapRef.current?.addPolyline('segment2', {
-  points: [point2, point3],
-  width: 20,
-  color: '#FF0000FF',
-  texture: blueArrowUri,
-});
-```
-
-> **注意**：
-> - 颜色格式使用 ARGB（`#AARRGGBB`），例如 `#FFFF0000` 表示不透明红色
-> - `texture` 支持网络图片（http/https）和本地文件（file://）
-> - 纹理图片会沿着折线方向平铺显示
-> - 建议纹理折线使用较大的 `width` 值（如 20）以获得更好的显示效果
-> - **分段纹理限制**：单个 Polyline 只能设置一个纹理。如需不同线段使用不同纹理，请创建多个 Polyline 组件
-
-### Polygon (多边形)
-
-**声明式用法:**
+**Declarative usage:**
 ```tsx
 <MapView style={{ flex: 1 }}>
   <Polygon
@@ -670,12 +544,12 @@ await mapRef.current?.addPolyline('segment2', {
     fillColor="#8800FF00"
     strokeColor="#FFFF0000"
     strokeWidth={2}
-    onPress={() => console.log('点击多边形')}
+    onPress={() => console.log('Polygon pressed')}
   />
 </MapView>
 ```
 
-**命令式用法:**
+**Imperative usage:**
 ```tsx
 await mapRef.current?.addPolygon('polygon1', {
   points: [
@@ -689,9 +563,9 @@ await mapRef.current?.addPolygon('polygon1', {
 });
 ```
 
-## 高级用法
+## Advanced Usage
 
-### 自定义定位蓝点
+### Custom Location Blue Dot
 
 ```tsx
 import { Image } from 'react-native';
@@ -712,7 +586,7 @@ const iconUri = Image.resolveAssetSource(require('./assets/location-icon.png')).
 />
 ```
 
-### 批量操作覆盖物
+### Batch Overlay Operations
 
 ```tsx
 const mapRef = useRef<MapViewRef>(null);
@@ -732,7 +606,7 @@ const addMultipleOverlays = async () => {
   
   await mapRef.current?.addMarker('marker1', {
     position: { latitude: 39.95, longitude: 116.45 },
-    title: '北京',
+    title: 'Beijing',
   });
 };
 
@@ -743,7 +617,7 @@ const clearAll = async () => {
 };
 ```
 
-### 缩放级别限制
+### Zoom Level Limits
 
 ```tsx
 <MapView
@@ -756,13 +630,13 @@ const clearAll = async () => {
 />
 ```
 
-### 方向更新 (iOS)
+### Heading Updates (iOS)
 
 ```tsx
 import { startUpdatingHeading, stopUpdatingHeading } from 'expo-gaode-map';
 
-// 开始方向更新
+// Start heading updates
 startUpdatingHeading();
 
-// 停止方向更新
+// Stop heading updates
 stopUpdatingHeading();
