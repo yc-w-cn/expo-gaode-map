@@ -7,6 +7,7 @@ import com.amap.api.location.AMapLocationClient
 import com.amap.api.location.AMapLocationClientOption
 import com.amap.api.maps.model.LatLng
 import expo.modules.kotlin.Promise
+import expo.modules.gaodemap.services.LocationForegroundService
 
 /**
  * 定位管理器
@@ -32,6 +33,8 @@ class LocationManager(context: Context) {
     private var isLocationStarted = false
     /** 定位更新回调 */
     private var onLocationUpdate: ((Map<String, Any?>) -> Unit)? = null
+    /** 是否启用后台定位 */
+    private var allowsBackgroundLocationUpdates = false
 
     init {
         initLocationClient()
@@ -52,6 +55,12 @@ class LocationManager(context: Context) {
         if (locationClient == null) {
             initLocationClient()
         }
+        
+        // 如果启用后台定位,启动前台服务
+        if (allowsBackgroundLocationUpdates) {
+            LocationForegroundService.start(appContext)
+        }
+        
         locationClient?.startLocation()
         isLocationStarted = true
     }
@@ -62,6 +71,11 @@ class LocationManager(context: Context) {
     fun stop() {
         locationClient?.stopLocation()
         isLocationStarted = false
+        
+        // 停止前台服务
+        if (allowsBackgroundLocationUpdates) {
+            LocationForegroundService.stop(appContext)
+        }
     }
 
     /**
@@ -205,6 +219,11 @@ class LocationManager(context: Context) {
         applyLocationOption()
     }
 
+    /** 设置是否允许后台定位 */
+    fun setAllowsBackgroundLocationUpdates(allows: Boolean) {
+        allowsBackgroundLocationUpdates = allows
+    }
+
     /**
      * 销毁资源
      */
@@ -214,6 +233,11 @@ class LocationManager(context: Context) {
         locationClient?.onDestroy()
         locationClient = null
         locationOption = null
+        
+        // 确保停止前台服务
+        if (allowsBackgroundLocationUpdates) {
+            LocationForegroundService.stop(appContext)
+        }
     }
 
     // ==================== 私有方法 ====================
@@ -229,6 +253,7 @@ class LocationManager(context: Context) {
                         onLocationUpdate?.invoke(formatLocation(location))
                     }
                 }
+                
             }
 
             locationOption = AMapLocationClientOption().apply {

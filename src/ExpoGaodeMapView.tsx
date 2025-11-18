@@ -1,6 +1,6 @@
 import { requireNativeViewManager } from 'expo-modules-core';
 import * as React from 'react';
-
+import { EventManager } from './utils/EventManager';
 import type {
   MapViewProps,
   MapViewRef,
@@ -14,15 +14,12 @@ import type {
   PolygonProps,
 } from './types';
 
-// 重新导出 MapViewRef 供外部使用
 export type { MapViewRef } from './types';
 
 const NativeView: React.ComponentType<MapViewProps & { ref?: React.Ref<NativeMapViewRef> }> = requireNativeViewManager('ExpoGaodeMap');
 
-// 创建 Context 用于子组件访问 MapRef
 export const MapContext = React.createContext<React.RefObject<MapViewRef | null> | null>(null);
 
-// Marker 事件管理器
 type MarkerEventCallbacks = {
   onPress?: () => void;
   onDragStart?: () => void;
@@ -30,104 +27,14 @@ type MarkerEventCallbacks = {
   onDragEnd?: (event: { nativeEvent: LatLng }) => void;
 };
 
-class MarkerEventManager {
-  private callbacks = new Map<string, MarkerEventCallbacks>();
-  
-  register(markerId: string, callbacks: MarkerEventCallbacks) {
-    this.callbacks.set(markerId, callbacks);
-  }
-  
-  unregister(markerId: string) {
-    this.callbacks.delete(markerId);
-  }
-  
-  trigger(markerId: string, eventType: keyof MarkerEventCallbacks, data?: any) {
-    const callbacks = this.callbacks.get(markerId);
-    if (callbacks && callbacks[eventType]) {
-      callbacks[eventType]!(data);
-    }
-  }
-}
-
-export const MarkerEventContext = React.createContext<MarkerEventManager | null>(null);
-
-// Circle 事件管理器
-type CircleEventCallbacks = {
+type OverlayEventCallbacks = {
   onPress?: () => void;
 };
 
-class CircleEventManager {
-  private callbacks = new Map<string, CircleEventCallbacks>();
-  
-  register(circleId: string, callbacks: CircleEventCallbacks) {
-    this.callbacks.set(circleId, callbacks);
-  }
-  
-  unregister(circleId: string) {
-    this.callbacks.delete(circleId);
-  }
-  
-  trigger(circleId: string, eventType: keyof CircleEventCallbacks) {
-    const callbacks = this.callbacks.get(circleId);
-    if (callbacks && callbacks[eventType]) {
-      callbacks[eventType]!();
-    }
-  }
-}
-
-export const CircleEventContext = React.createContext<CircleEventManager | null>(null);
-
-// Polygon 事件管理器
-type PolygonEventCallbacks = {
-  onPress?: () => void;
-};
-
-class PolygonEventManager {
-  private callbacks = new Map<string, PolygonEventCallbacks>();
-  
-  register(polygonId: string, callbacks: PolygonEventCallbacks) {
-    this.callbacks.set(polygonId, callbacks);
-  }
-  
-  unregister(polygonId: string) {
-    this.callbacks.delete(polygonId);
-  }
-  
-  trigger(polygonId: string, eventType: keyof PolygonEventCallbacks) {
-    const callbacks = this.callbacks.get(polygonId);
-    if (callbacks && callbacks[eventType]) {
-      callbacks[eventType]!();
-    }
-  }
-}
-
-export const PolygonEventContext = React.createContext<PolygonEventManager | null>(null);
-
-// Polyline 事件管理器
-type PolylineEventCallbacks = {
-  onPress?: () => void;
-};
-
-class PolylineEventManager {
-  private callbacks = new Map<string, PolylineEventCallbacks>();
-  
-  register(polylineId: string, callbacks: PolylineEventCallbacks) {
-    this.callbacks.set(polylineId, callbacks);
-  }
-  
-  unregister(polylineId: string) {
-    this.callbacks.delete(polylineId);
-  }
-  
-  trigger(polylineId: string, eventType: keyof PolylineEventCallbacks) {
-    const callbacks = this.callbacks.get(polylineId);
-    if (callbacks && callbacks[eventType]) {
-      callbacks[eventType]!();
-    }
-  }
-}
-
-export const PolylineEventContext = React.createContext<PolylineEventManager | null>(null);
+export const MarkerEventContext = React.createContext<EventManager<MarkerEventCallbacks> | null>(null);
+export const CircleEventContext = React.createContext<EventManager<OverlayEventCallbacks> | null>(null);
+export const PolygonEventContext = React.createContext<EventManager<OverlayEventCallbacks> | null>(null);
+export const PolylineEventContext = React.createContext<EventManager<OverlayEventCallbacks> | null>(null);
 
 /**
  * 高德地图视图组件，提供地图操作API和覆盖物管理功能
@@ -150,37 +57,29 @@ export const PolylineEventContext = React.createContext<PolylineEventManager | n
 const ExpoGaodeMapView = React.forwardRef<MapViewRef, MapViewProps>((props, ref) => {
   const nativeRef = React.useRef<NativeMapViewRef>(null);
   const internalRef = React.useRef<MapViewRef | null>(null);
-  const markerEventManager = React.useRef(new MarkerEventManager()).current;
-  const circleEventManager = React.useRef(new CircleEventManager()).current;
-  const polygonEventManager = React.useRef(new PolygonEventManager()).current;
-  const polylineEventManager = React.useRef(new PolylineEventManager()).current;
-  
-  // 处理 Marker 事件
-  const handleMarkerPress = React.useCallback((event: any) => {
+  const markerEventManager = React.useMemo(() => new EventManager<MarkerEventCallbacks>(), []);
+  const circleEventManager = React.useMemo(() => new EventManager<OverlayEventCallbacks>(), []);
+  const polygonEventManager = React.useMemo(() => new EventManager<OverlayEventCallbacks>(), []);
+  const polylineEventManager = React.useMemo(() => new EventManager<OverlayEventCallbacks>(), []);
+  const handleMarkerPress = (event: any) => {
     const markerId = event.nativeEvent?.markerId;
-    if (markerId) {
-      markerEventManager.trigger(markerId, 'onPress');
-    }
+    if (markerId) markerEventManager.trigger(markerId, 'onPress');
     props.onMarkerPress?.(event);
-  }, [props.onMarkerPress]);
+  };
   
-  const handleMarkerDragStart = React.useCallback((event: any) => {
+  const handleMarkerDragStart = (event: any) => {
     const markerId = event.nativeEvent?.markerId;
-    if (markerId) {
-      markerEventManager.trigger(markerId, 'onDragStart');
-    }
+    if (markerId) markerEventManager.trigger(markerId, 'onDragStart');
     props.onMarkerDragStart?.(event);
-  }, [props.onMarkerDragStart]);
+  };
   
-  const handleMarkerDrag = React.useCallback((event: any) => {
+  const handleMarkerDrag = (event: any) => {
     const markerId = event.nativeEvent?.markerId;
-    if (markerId) {
-      markerEventManager.trigger(markerId, 'onDrag');
-    }
+    if (markerId) markerEventManager.trigger(markerId, 'onDrag');
     props.onMarkerDrag?.(event);
-  }, [props.onMarkerDrag]);
+  };
   
-  const handleMarkerDragEnd = React.useCallback((event: any) => {
+  const handleMarkerDragEnd = (event: any) => {
     const markerId = event.nativeEvent?.markerId;
     if (markerId) {
       markerEventManager.trigger(markerId, 'onDragEnd', {
@@ -191,31 +90,25 @@ const ExpoGaodeMapView = React.forwardRef<MapViewRef, MapViewProps>((props, ref)
       });
     }
     props.onMarkerDragEnd?.(event);
-  }, [props.onMarkerDragEnd]);
+  };
   
-  const handleCirclePress = React.useCallback((event: any) => {
+  const handleCirclePress = (event: any) => {
     const circleId = event.nativeEvent?.circleId;
-    if (circleId) {
-      circleEventManager.trigger(circleId, 'onPress');
-    }
+    if (circleId) circleEventManager.trigger(circleId, 'onPress');
     props.onCirclePress?.(event);
-  }, [props.onCirclePress]);
+  };
   
-  const handlePolygonPress = React.useCallback((event: any) => {
+  const handlePolygonPress = (event: any) => {
     const polygonId = event.nativeEvent?.polygonId;
-    if (polygonId) {
-      polygonEventManager.trigger(polygonId, 'onPress');
-    }
+    if (polygonId) polygonEventManager.trigger(polygonId, 'onPress');
     props.onPolygonPress?.(event);
-  }, [props.onPolygonPress]);
+  };
   
-  const handlePolylinePress = React.useCallback((event: any) => {
+  const handlePolylinePress = (event: any) => {
     const polylineId = event.nativeEvent?.polylineId;
-    if (polylineId) {
-      polylineEventManager.trigger(polylineId, 'onPress');
-    }
+    if (polylineId) polylineEventManager.trigger(polylineId, 'onPress');
     props.onPolylinePress?.(event);
-  }, [props.onPolylinePress]);
+  };
 
   const apiRef: MapViewRef = React.useMemo(() => ({
     /**

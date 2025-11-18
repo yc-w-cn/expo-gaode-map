@@ -199,7 +199,17 @@ configure({
 | `setDesiredAccuracy` | `number` | 期望精度（0-5，0: 最适合导航, 1: 最佳, 2: 10米, 3: 100米, 4: 1公里, 5: 3公里） |
 | `setDistanceFilter` | `number` | 距离过滤器（米） |
 | `setPausesLocationUpdatesAutomatically` | `boolean` | 是否自动暂停定位更新 |
+
+##### 后台定位配置（全平台支持）
+
+| 方法 | 参数 | 说明 |
+|------|------|------|
 | `setAllowsBackgroundLocationUpdates` | `boolean` | 是否允许后台定位 |
+
+> **后台定位说明**:
+> - **iOS**: 需要在 Info.plist 中配置 `NSLocationAlwaysAndWhenInUseUsageDescription` 和 `UIBackgroundModes` (包含 `location`)
+> - **Android**: 自动启动前台服务，需要 `ACCESS_BACKGROUND_LOCATION` 权限（Android 10+）
+> - 后台定位会增加电量消耗，请谨慎使用
 
 ### 方向更新（iOS）
 

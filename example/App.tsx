@@ -13,7 +13,8 @@ import {
   checkLocationPermission,
   requestLocationPermission,
   MarkerProps,
-  configure
+  configure,
+  addLocationListener
 } from 'expo-gaode-map';
 import {Image, StyleSheet, View, Text, Button, Alert, Platform, ScrollView, Animated } from 'react-native';
 
@@ -92,6 +93,20 @@ export default function App() {
           }
         }
         
+        // 配置定位参数
+        configure({
+          withReGeocode: true,
+          interval: 5000,
+          allowsBackgroundLocationUpdates: true,
+          distanceFilter:1
+        });
+        
+        // 添加位置监听器
+        const subscription = addLocationListener((loc: any) => {
+          console.log('🔄 位置更新:', loc);
+          setLocation(loc);
+        });
+        
         console.log('📍 开始获取位置...');
         const loc = await getCurrentLocation();
         console.log('📍 获取到位置:', loc);
@@ -107,11 +122,11 @@ export default function App() {
           duration: 500,
           useNativeDriver: true,
         }).start();
-
-        configure({
-          allowsBackgroundLocationUpdates: true
-        })
-
+        
+        // 清理函数
+        return () => {
+          subscription.remove();
+        };
        
       } catch (error) {
         console.error('初始化失败:', error);
@@ -125,7 +140,7 @@ export default function App() {
   // 开始连续定位
   const startLocation = async () => {
     try {
-      await start();
+      start();
       setIsLocating(true);
       Alert.alert('成功', '开始定位');
     } catch (error) {
@@ -137,7 +152,7 @@ export default function App() {
   // 停止定位
   const stopLocation = async () => {
     try {
-      await stop();
+      stop();
       setIsLocating(false);
       Alert.alert('成功', '停止定位');
     } catch (error) {
@@ -193,10 +208,10 @@ export default function App() {
         latitude: location.latitude + randomOffset(),
         longitude: location.longitude + randomOffset(),
       },
-      radius: 100 + Math.random() * 200, // 100-300米随机半径
+      radius: 100 + Math.random() * 400, // 100-300米随机半径
       fillColor: randomColor.fill,
       strokeColor: randomColor.stroke,
-      strokeWidth: 2,
+      strokeWidth: 3,
     };
 
     setCircles(prev => [...prev, newCircle]);
@@ -477,7 +492,7 @@ export default function App() {
           />
           
           {/* 文档示例 2: 静态 Polygon */}
-          <Polygon
+          {/* <Polygon
             points={[
               { latitude: 39.9, longitude: 116.3 },
               { latitude: 39.9, longitude: 116.4 },
@@ -489,7 +504,7 @@ export default function App() {
             strokeWidth={2}
             onPress={() => console.log('点击多边形')}
             zIndex={99}
-          />
+          /> */}
           
           {/* 文档示例 3: 静态 Polyline - 虚线 + 大地线 */}
           <Polyline
@@ -505,7 +520,7 @@ export default function App() {
             onPress={() => console.log('点击折线')}
           />
        
-          {/* {circles.map((circle) => (
+          {circles.map((circle) => (
             <Circle
               key={circle.id}
               center={circle.center}
@@ -516,7 +531,7 @@ export default function App() {
                onPress={() => console.log('点击圆形')}
             />
 
-          ))} */}
+          ))}
           </MapView>
         </Animated.View>
       ) : (
@@ -679,7 +694,7 @@ const styles = StyleSheet.create({
   },
   map: {
     flex: 1,
-    minHeight: 400,
+    minHeight:400,
   },
   infoContainer: {
     backgroundColor: 'white',

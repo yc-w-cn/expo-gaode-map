@@ -80,7 +80,7 @@ class MultiPointView(context: Context, appContext: AppContext) : ExpoView(contex
         
         // 创建海量点覆盖物
         multiPointOverlay = map.addMultiPointOverlay(overlayOptions)
-        multiPointOverlay?.setItems(points)
+          multiPointOverlay?.items = points
         
         // 注意：MultiPointOverlay 在高德地图 Android SDK 中不直接支持点击事件
         // 如果需要点击事件，需要使用 Marker 或其他方式实现

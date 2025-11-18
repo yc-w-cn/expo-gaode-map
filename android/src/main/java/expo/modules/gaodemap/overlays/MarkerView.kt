@@ -1,5 +1,6 @@
 package expo.modules.gaodemap.overlays
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -95,6 +96,7 @@ class MarkerView(context: Context, appContext: AppContext) : ExpoView(context, a
   /**
    * 设置锚点
    */
+  @SuppressLint("SuspiciousIndentation")
   fun setAnchor(anchor: Map<String, Float>) {
     val x = anchor["x"] ?: 0.5f
     val y = anchor["y"] ?: 1.0f

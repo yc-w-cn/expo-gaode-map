@@ -11,83 +11,48 @@ import type {
   CoordinateType,
 } from '../types';
 
+
 /**
- * 配置高德地图定位服务的各项参数
+ * 配置方法映射表
+ * @type {Record<keyof LocationOptions, string>}
+ * 
+ */
+const CONFIG_MAP: Record<keyof LocationOptions, string> = {
+  withReGeocode: 'setLocatingWithReGeocode',
+  accuracy: 'setDesiredAccuracy',
+  mode: 'setLocationMode',
+  onceLocation: 'setOnceLocation',
+  interval: 'setInterval',
+  timeout: 'setLocationTimeout',
+  reGeocodeTimeout: 'setReGeocodeTimeout',
+  distanceFilter: 'setDistanceFilter',
+  sensorEnable: 'setSensorEnable',
+  wifiScan: 'setWifiScan',
+  gpsFirst: 'setGpsFirst',
+  onceLocationLatest: 'setOnceLocationLatest',
+  geoLanguage: 'setGeoLanguage',
+  allowsBackgroundLocationUpdates: 'setAllowsBackgroundLocationUpdates',
+  pausesLocationUpdatesAutomatically: 'setPausesLocationUpdatesAutomatically',
+  locationCacheEnable: 'setLocationCacheEnable',
+  httpTimeout: 'setHttpTimeOut',
+  protocol: 'setLocationProtocol',
+};
+
+/**
+ * 配置高德地图定位选项
  * @param {LocationOptions} options - 定位配置选项对象
- * @param {boolean} [options.withReGeocode] - 是否返回逆地理编码信息
- * @param {number} [options.accuracy] - 定位精度设置
- * @param {string} [options.mode] - 定位模式
- * @param {boolean} [options.onceLocation] - 是否单次定位
- * @param {number} [options.interval] - 定位间隔(毫秒)
- * @param {number} [options.timeout] - 定位超时时间(毫秒)
- * @param {number} [options.reGeocodeTimeout] - 逆地理编码超时时间(毫秒)
- * @param {number} [options.distanceFilter] - 位置更新最小距离(米)
- * @param {boolean} [options.sensorEnable] - 是否启用传感器
- * @param {boolean} [options.wifiScan] - 是否开启WiFi扫描
- * @param {boolean} [options.gpsFirst] - 是否优先使用GPS
- * @param {boolean} [options.onceLocationLatest] - 是否获取最近3秒内最精确的位置
- * @param {string} [options.geoLanguage] - 地理编码语言
- * @param {boolean} [options.allowsBackgroundLocationUpdates] - 是否允许后台定位
- * @param {boolean} [options.pausesLocationUpdatesAutomatically] - 是否自动暂停定位
- * @param {boolean} [options.locationCacheEnable] - 是否启用定位缓存
- * @param {number} [options.httpTimeout] - 网络请求超时时间(毫秒)
- * @param {string} [options.protocol] - 定位协议
+ * @throws {Error} 当传入的配置方法不存在或不可调用时抛出错误
  */
 export function configure(options: LocationOptions): void {
-  if (options.withReGeocode !== undefined) {
-    ExpoGaodeMapModule.setLocatingWithReGeocode?.(options.withReGeocode);
-  }
-  if (options.accuracy !== undefined) {
-    ExpoGaodeMapModule.setDesiredAccuracy?.(options.accuracy);
-  }
-  if (options.mode !== undefined) {
-    ExpoGaodeMapModule.setLocationMode?.(options.mode);
-  }
-  if (options.onceLocation !== undefined) {
-    ExpoGaodeMapModule.setOnceLocation?.(options.onceLocation);
-  }
-  if (options.interval !== undefined) {
-    ExpoGaodeMapModule.setInterval?.(options.interval);
-  }
-  if (options.timeout !== undefined) {
-    ExpoGaodeMapModule.setLocationTimeout?.(options.timeout);
-  }
-  if (options.reGeocodeTimeout !== undefined) {
-    ExpoGaodeMapModule.setReGeocodeTimeout?.(options.reGeocodeTimeout);
-  }
-  if (options.distanceFilter !== undefined) {
-    ExpoGaodeMapModule.setDistanceFilter?.(options.distanceFilter);
-  }
-  if (options.sensorEnable !== undefined) {
-    ExpoGaodeMapModule.setSensorEnable?.(options.sensorEnable);
-  }
-  if (options.wifiScan !== undefined) {
-    ExpoGaodeMapModule.setWifiScan?.(options.wifiScan);
-  }
-  if (options.gpsFirst !== undefined) {
-    ExpoGaodeMapModule.setGpsFirst?.(options.gpsFirst);
-  }
-  if (options.onceLocationLatest !== undefined) {
-    ExpoGaodeMapModule.setOnceLocationLatest?.(options.onceLocationLatest);
-  }
-  if (options.geoLanguage !== undefined) {
-    ExpoGaodeMapModule.setGeoLanguage?.(options.geoLanguage);
-  }
-  if (options.allowsBackgroundLocationUpdates !== undefined) {
-    ExpoGaodeMapModule.setAllowsBackgroundLocationUpdates?.(options.allowsBackgroundLocationUpdates);
-  }
-  if (options.pausesLocationUpdatesAutomatically !== undefined) {
-    ExpoGaodeMapModule.setPausesLocationUpdatesAutomatically?.(options.pausesLocationUpdatesAutomatically);
-  }
-  if (options.locationCacheEnable !== undefined) {
-    ExpoGaodeMapModule.setLocationCacheEnable?.(options.locationCacheEnable);
-  }
-  if (options.httpTimeout !== undefined) {
-    ExpoGaodeMapModule.setHttpTimeOut?.(options.httpTimeout);
-  }
-  if (options.protocol !== undefined) {
-    ExpoGaodeMapModule.setLocationProtocol?.(options.protocol);
-  }
+  Object.entries(options).forEach(([key, value]) => {
+    if (value !== undefined) {
+      const methodName = CONFIG_MAP[key as keyof LocationOptions];
+      const method = ExpoGaodeMapModule[methodName as keyof typeof ExpoGaodeMapModule];
+      if (typeof method === 'function') {
+        (method as any).call(ExpoGaodeMapModule, value);
+      }
+    }
+  });
 }
 
 

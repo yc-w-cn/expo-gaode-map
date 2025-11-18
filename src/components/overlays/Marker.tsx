@@ -60,6 +60,17 @@ function MarkerImperative(props: MarkerProps) {
   }, []);
 
   React.useEffect(() => {
+    if (markerIdRef.current && eventManager) {
+      eventManager.register(markerIdRef.current, {
+        onPress: props.onPress,
+        onDragStart: props.onDragStart,
+        onDrag: props.onDrag,
+        onDragEnd: props.onDragEnd,
+      });
+    }
+  }, [props.onPress, props.onDragStart, props.onDrag, props.onDragEnd]);
+
+  React.useEffect(() => {
     if (markerIdRef.current && mapRef?.current) {
       const processedProps = { ...props };
       if (processedProps.icon && typeof processedProps.icon === 'number') {

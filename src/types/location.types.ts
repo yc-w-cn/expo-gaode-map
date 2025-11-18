@@ -324,7 +324,6 @@ export interface LocationOptions {
 
   /**
    * 是否允许后台定位
-   * @platform ios
    * @default false
    */
   allowsBackgroundLocationUpdates?: boolean;

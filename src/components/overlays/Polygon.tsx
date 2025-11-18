@@ -75,6 +75,14 @@ export default function Polygon(props: PolygonProps) {
   }, []);
 
   useEffect(() => {
+    if (polygonIdRef.current && eventManager) {
+      eventManager.register(polygonIdRef.current, {
+        onPress: props.onPress,
+      });
+    }
+  }, [props.onPress]);
+
+  useEffect(() => {
     if (polygonIdRef.current && nativeRef?.current) {
       nativeRef.current.updatePolygon(polygonIdRef.current, {
         points,

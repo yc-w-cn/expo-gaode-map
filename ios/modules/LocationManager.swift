@@ -176,8 +176,8 @@ class LocationManager: NSObject, AMapLocationManagerDelegate {
         locationManager?.delegate = self
         locationManager?.desiredAccuracy = kCLLocationAccuracyBest
         locationManager?.distanceFilter = 10
-        locationManager?.locationTimeout = 1
-        locationManager?.reGeocodeTimeout = 1
+        locationManager?.locationTimeout = 10  // 10秒超时
+        locationManager?.reGeocodeTimeout = 5  // 5秒超时
         locationManager?.locatingWithReGeocode = true
         
         // iOS 9 之前:防止后台被系统挂起(默认关闭,用户可通过 setPausesLocationUpdatesAutomatically 配置)

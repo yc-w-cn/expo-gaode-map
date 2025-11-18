@@ -73,5 +73,13 @@ export default function Polyline(props: PolylineProps) {
     };
   }, []);
 
+  React.useEffect(() => {
+    if (polylineIdRef.current && eventManager) {
+      eventManager.register(polylineIdRef.current, {
+        onPress: props.onPress,
+      });
+    }
+  }, [props.onPress]);
+
   return null;
 }

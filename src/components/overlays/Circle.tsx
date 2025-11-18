@@ -46,6 +46,14 @@ export default function Circle(props: CircleProps) {
   }, []);
 
   React.useEffect(() => {
+    if (circleIdRef.current && eventManager) {
+      eventManager.register(circleIdRef.current, {
+        onPress: props.onPress,
+      });
+    }
+  }, [props.onPress]);
+
+  React.useEffect(() => {
     if (circleIdRef.current && mapRef?.current) {
       mapRef.current.updateCircle(circleIdRef.current, props);
     }

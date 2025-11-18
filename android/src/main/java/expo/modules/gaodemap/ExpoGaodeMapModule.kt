@@ -220,11 +220,12 @@ class ExpoGaodeMapModule : Module() {
     }
 
     /**
-     * 设置是否允许后台定位 (iOS 专用,Android 空实现)
+     * 设置是否允许后台定位
+     * Android 通过前台服务实现,iOS 通过系统配置实现
      * @param allows 是否允许后台定位
      */
-    Function("setAllowsBackgroundLocationUpdates") { _: Boolean ->
-      // Android 不支持此配置
+    Function("setAllowsBackgroundLocationUpdates") { allows: Boolean ->
+      getLocationManager().setAllowsBackgroundLocationUpdates(allows)
     }
 
     /**
@@ -510,6 +511,10 @@ class ExpoGaodeMapModule : Module() {
       
       Prop<Float>("strokeWidth") { view, width ->
         view.setStrokeWidth(width)
+      }
+
+      Prop<Float>("zIndex") { view, zIndex ->
+        view.setZIndex(zIndex)
       }
     }
     
