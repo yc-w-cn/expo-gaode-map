@@ -169,6 +169,8 @@ class PolylineView(context: Context, appContext: AppContext) : ExpoView(context,
                 if (resId != 0) {
                   val bitmap = android.graphics.BitmapFactory.decodeResource(context.resources, resId)
                   options.setCustomTexture(BitmapDescriptorFactory.fromBitmap(bitmap))
+                }else{
+                  
                 }
               }
             }

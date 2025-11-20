@@ -1,8 +1,9 @@
+
 import { requireNativeViewManager } from 'expo-modules-core';
 import * as React from 'react';
 import type { ClusterProps } from '../../types';
 
-const NativeCluster = requireNativeViewManager('ExpoGaodeMap_ClusterView');
+const NativeCluster = requireNativeViewManager('ClusterView');
 
 
 /**

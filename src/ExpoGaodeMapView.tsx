@@ -16,7 +16,7 @@ import type {
 
 export type { MapViewRef } from './types';
 
-const NativeView: React.ComponentType<MapViewProps & { ref?: React.Ref<NativeMapViewRef> }> = requireNativeViewManager('ExpoGaodeMap');
+const NativeView: React.ComponentType<MapViewProps & { ref?: React.Ref<NativeMapViewRef> }> = requireNativeViewManager('ExpoGaodeMapView');
 
 export const MapContext = React.createContext<React.RefObject<MapViewRef | null> | null>(null);
 

@@ -59,6 +59,7 @@ class ExpoGaodeMapView: ExpoView, MAMapViewDelegate {
     let onMapPress = EventDispatcher()
     let onMapLongPress = EventDispatcher()
     let onLoad = EventDispatcher()
+    let onLocation = EventDispatcher()
     let onMarkerPress = EventDispatcher()
     let onMarkerDragStart = EventDispatcher()
     let onMarkerDrag = EventDispatcher()
@@ -99,6 +100,17 @@ class ExpoGaodeMapView: ExpoView, MAMapViewDelegate {
         
         cameraManager = CameraManager(mapView: mapView)
         uiManager = UIManager(mapView: mapView)
+        
+        // 设置定位变化回调
+        uiManager.onLocationChanged = { [weak self] latitude, longitude, accuracy in
+            self?.onLocation([
+                "latitude": latitude,
+                "longitude": longitude,
+                "accuracy": accuracy,
+                "timestamp": Date().timeIntervalSince1970 * 1000
+            ])
+        }
+        
         overlayManager = OverlayManager(mapView: mapView)
         
         // 设置覆盖物点击回调
@@ -125,13 +137,15 @@ class ExpoGaodeMapView: ExpoView, MAMapViewDelegate {
      * 将地图实例传递给覆盖物子视图
      */
     override func addSubview(_ view: UIView) {
+        if let markerView = view as? MarkerView {
+            // 不添加到视图层级,只调用 setMap
+            markerView.setMap(mapView)
+            return
+        }
+        
         super.addSubview(view)
         
-
-        
-        if let markerView = view as? MarkerView {
-            markerView.setMap(mapView)
-        } else if let circleView = view as? CircleView {
+        if let circleView = view as? CircleView {
             circleView.setMap(mapView)
         } else if let polylineView = view as? PolylineView {
             polylineView.setMap(mapView)

@@ -16,6 +16,12 @@ import expo.modules.kotlin.views.ExpoView
 
 class MarkerView(context: Context, appContext: AppContext) : ExpoView(context, appContext) {
   
+  init {
+    // 不可交互,通过父视图定位到屏幕外
+    isClickable = false
+    isFocusable = false
+  }
+  
   private val onPress by EventDispatcher()
   private val onDragStart by EventDispatcher()
   private val onDrag by EventDispatcher()
@@ -142,6 +148,16 @@ class MarkerView(context: Context, appContext: AppContext) : ExpoView(context, a
         val options = MarkerOptions()
         marker = map.addMarker(options)
         
+        // 延迟处理子视图,等待 React Native 添加完成
+        postDelayed({
+          if (childCount > 0) {
+            val bitmap = createBitmapFromView()
+            bitmap?.let {
+              marker?.setIcon(BitmapDescriptorFactory.fromBitmap(it))
+            }
+          }
+        }, 100)
+        
         // 设置点击监听
         map.setOnMarkerClickListener { clickedMarker ->
           if (clickedMarker == marker) {
@@ -190,6 +206,43 @@ class MarkerView(context: Context, appContext: AppContext) : ExpoView(context, a
             }
           }
         })
+      }
+    }
+  }
+  
+  /**
+   * 将视图转换为 Bitmap
+   */
+  private fun createBitmapFromView(): Bitmap? {
+    if (childCount == 0) return null
+    
+    return try {
+      measure(
+        MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED),
+        MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED)
+      )
+      layout(0, 0, measuredWidth, measuredHeight)
+      
+      val bitmap = Bitmap.createBitmap(measuredWidth, measuredHeight, Bitmap.Config.ARGB_8888)
+      val canvas = Canvas(bitmap)
+      draw(canvas)
+      bitmap
+    } catch (e: Exception) {
+      e.printStackTrace()
+      null
+    }
+  }
+  
+  override fun addView(child: View?, index: Int, params: android.view.ViewGroup.LayoutParams?) {
+    super.addView(child, index, params)
+    
+    // 当添加子视图时,手动触发测量和布局
+    post {
+      if (childCount > 0) {
+        val bitmap = createBitmapFromView()
+        bitmap?.let {
+          marker?.setIcon(BitmapDescriptorFactory.fromBitmap(it))
+        }
       }
     }
   }

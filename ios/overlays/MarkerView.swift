@@ -49,6 +49,8 @@ class MarkerView: ExpoView {
     
     required init(appContext: AppContext? = nil) {
         super.init(appContext: appContext)
+        // 不可交互,通过父视图定位到屏幕外
+        isUserInteractionEnabled = false
     }
     
     /**
@@ -84,8 +86,54 @@ class MarkerView: ExpoView {
         mapView.addAnnotation(annotation)
         self.annotation = annotation
         
-        // 获取 annotationView
-        annotationView = mapView.view(for: annotation)
+        // 延迟处理子视图,等待 React Native 添加完成
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            guard let self = self else { return }
+            if let view = mapView.view(for: annotation), self.subviews.count > 0 {
+                self.annotationView = view
+                if let image = self.createImageFromSubviews() {
+                    view.image = image
+                    view.centerOffset = CGPoint(x: 0, y: -image.size.height / 2)
+                }
+            }
+        }
+    }
+    
+    /**
+     * 将子视图转换为图片
+     */
+    private func createImageFromSubviews() -> UIImage? {
+        guard subviews.count > 0 else { return nil }
+        
+        // 强制布局
+        setNeedsLayout()
+        layoutIfNeeded()
+        
+        let size = bounds.size
+        guard size.width > 0 && size.height > 0 else { return nil }
+        
+        UIGraphicsBeginImageContextWithOptions(size, false, 0.0)
+        defer { UIGraphicsEndImageContext() }
+        
+        guard let context = UIGraphicsGetCurrentContext() else { return nil }
+        layer.render(in: context)
+        
+        return UIGraphicsGetImageFromCurrentImageContext()
+    }
+    
+    override func didAddSubview(_ subview: UIView) {
+        super.didAddSubview(subview)
+        
+        // 当添加子视图时,更新标记图标
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            if self.subviews.count > 0, let view = self.annotationView {
+                if let image = self.createImageFromSubviews() {
+                    view.image = image
+                    view.centerOffset = CGPoint(x: 0, y: -image.size.height / 2)
+                }
+            }
+        }
     }
     
     /**

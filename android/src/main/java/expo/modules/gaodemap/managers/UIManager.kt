@@ -3,6 +3,7 @@ package expo.modules.gaodemap.managers
 import android.content.Context
 import android.graphics.BitmapFactory
 import com.amap.api.maps.AMap
+import com.amap.api.maps.LocationSource
 import com.amap.api.maps.model.BitmapDescriptorFactory
 import com.amap.api.maps.model.MyLocationStyle
 import expo.modules.gaodemap.utils.ColorParser
@@ -14,6 +15,8 @@ import java.net.URL
  * 负责地图控件显示、手势控制、图层显示等
  */
 class UIManager(private val aMap: AMap, private val context: Context) {
+  
+  var onLocationChanged: ((latitude: Double, longitude: Double, accuracy: Float) -> Unit)? = null
   
   // ==================== 控件显示 ====================
   
@@ -87,8 +90,27 @@ class UIManager(private val aMap: AMap, private val context: Context) {
       }
       currentLocationStyle?.myLocationType(locationType)
       aMap.myLocationStyle = currentLocationStyle
+      
+      // 设置定位监听
+      aMap.setLocationSource(object : LocationSource {
+        override fun activate(listener: LocationSource.OnLocationChangedListener?) {
+          // 高德地图会自动处理定位，我们只需要监听位置变化
+        }
+        override fun deactivate() {}
+      })
+      
+      // 监听定位变化
+      aMap.setOnMyLocationChangeListener { location ->
+        onLocationChanged?.invoke(
+          location.latitude,
+          location.longitude,
+          location.accuracy
+        )
+      }
+      
       aMap.isMyLocationEnabled = true
     } else {
+      aMap.setOnMyLocationChangeListener(null)
       aMap.isMyLocationEnabled = false
     }
   }

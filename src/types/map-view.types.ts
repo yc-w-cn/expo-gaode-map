@@ -5,6 +5,7 @@
 
 import type { StyleProp, ViewStyle } from 'react-native';
 import type { CameraPosition, LatLng, LatLngBounds, MapPoi, MapType, Point } from './common.types';
+import type { Coordinates, ReGeocode } from './location.types';
 
 /**
  * 地图相机事件
@@ -197,7 +198,7 @@ export interface MapViewProps {
   /**
    * 地图定位更新事件
    */
-  onLocation?: (event: Location) => void;
+  onLocation?: (event: Coordinates | ReGeocode) => void;
 
   /**
    * Marker 点击事件

@@ -46,6 +46,7 @@ class ExpoGaodeMapView(context: Context, appContext: AppContext) : ExpoView(cont
   private val onMapPress by EventDispatcher()
   private val onMapLongPress by EventDispatcher()
   private val onLoad by EventDispatcher()
+  private val onLocation by EventDispatcher()
   private val onMarkerPress by EventDispatcher()
   private val onMarkerDragStart by EventDispatcher()
   private val onMarkerDrag by EventDispatcher()
@@ -80,7 +81,17 @@ class ExpoGaodeMapView(context: Context, appContext: AppContext) : ExpoView(cont
       
       // 初始化管理器
       cameraManager = CameraManager(aMap)
-      uiManager = UIManager(aMap, context)
+      uiManager = UIManager(aMap, context).apply {
+        // 设置定位变化回调
+        onLocationChanged = { latitude, longitude, accuracy ->
+          this@ExpoGaodeMapView.onLocation(mapOf(
+            "latitude" to latitude,
+            "longitude" to longitude,
+            "accuracy" to accuracy.toDouble(),
+            "timestamp" to System.currentTimeMillis()
+          ))
+        }
+      }
       overlayManager = OverlayManager(aMap, context).apply {
         onMarkerPress = { id, lat, lng ->
           this@ExpoGaodeMapView.onMarkerPress(mapOf(
@@ -479,12 +490,17 @@ class ExpoGaodeMapView(context: Context, appContext: AppContext) : ExpoView(cont
    * 添加子视图时自动连接到地图
    */
   override fun addView(child: View?, index: Int) {
+    if (child is MarkerView) {
+      // 不添加到视图层级,只调用 setMap
+      child.setMap(aMap)
+      return
+    }
+    
     super.addView(child, index)
     
-    // 自动将地图实例传递给覆盖物子视图
+    // 自动将地图实例传递给其他覆盖物子视图
     child?.let {
       when (it) {
-        is MarkerView -> it.setMap(aMap)
         is PolylineView -> it.setMap(aMap)
         is PolygonView -> it.setMap(aMap)
         is CircleView -> it.setMap(aMap)

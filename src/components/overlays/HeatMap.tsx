@@ -1,8 +1,9 @@
+
 import { requireNativeViewManager } from 'expo-modules-core';
 import * as React from 'react';
 import type { HeatMapProps } from '../../types';
 
-const NativeHeatMap = requireNativeViewManager('ExpoGaodeMap_HeatMapView');
+const NativeHeatMap = requireNativeViewManager('HeatMapView');
 
 
 /**

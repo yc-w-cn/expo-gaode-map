@@ -1,10 +1,57 @@
 import * as React from 'react';
 import { Image } from 'react-native';
+import { requireNativeViewManager } from 'expo-modules-core';
 import { MapContext, MarkerEventContext } from '../../ExpoGaodeMapView';
 import type { MarkerProps } from '../../types';
 
+const NativeMarkerView = requireNativeViewManager('MarkerView');
+
 export default function Marker(props: MarkerProps) {
+  // 如果有 children，使用声明式 API
+  if (props.children) {
+    return <MarkerDeclarative {...props} />;
+  }
+  // 否则使用命令式 API
   return <MarkerImperative {...props} />;
+}
+
+function MarkerDeclarative(props: MarkerProps) {
+  const eventManager = React.useContext(MarkerEventContext);
+  const markerIdRef = React.useRef(`marker_${Date.now()}_${Math.random()}`);
+  
+  React.useEffect(() => {
+    if (eventManager) {
+      eventManager.register(markerIdRef.current, {
+        onPress: props.onPress,
+        onDragStart: props.onDragStart,
+        onDrag: props.onDrag,
+        onDragEnd: props.onDragEnd,
+      });
+    }
+    return () => {
+      if (eventManager) {
+        eventManager.unregister(markerIdRef.current);
+      }
+    };
+  }, [props.onPress, props.onDragStart, props.onDrag, props.onDragEnd]);
+  
+  return (
+    <NativeMarkerView
+      position={props.position}
+      title={props.title}
+      draggable={props.draggable}
+      opacity={props.opacity}
+      anchor={props.anchor}
+      flat={props.flat}
+      zIndex={props.zIndex}
+      onPress={props.onPress}
+      onDragStart={props.onDragStart}
+      onDrag={props.onDrag}
+      onDragEnd={props.onDragEnd}
+    >
+      {props.children}
+    </NativeMarkerView>
+  );
 }
 
 function MarkerImperative(props: MarkerProps) {

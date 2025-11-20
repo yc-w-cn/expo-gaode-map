@@ -1,9 +1,29 @@
 {
   "platforms": ["apple", "android"],
   "apple": {
-    "modules": ["ExpoGaodeMapModule"]
+    "modules": [
+      "ExpoGaodeMapModule",
+      "ExpoGaodeMapViewModule",
+      "MarkerViewModule",
+      "CircleViewModule",
+      "PolygonViewModule",
+      "PolylineViewModule",
+      "MultiPointViewModule",
+      "HeatMapViewModule",
+      "ClusterViewModule"
+    ]
   },
   "android": {
-    "modules": ["expo.modules.gaodemap.ExpoGaodeMapModule"]
+    "modules": [
+      "expo.modules.gaodemap.ExpoGaodeMapModule",
+      "expo.modules.gaodemap.ExpoGaodeMapViewModule",
+      "expo.modules.gaodemap.overlays.MarkerViewModule",
+      "expo.modules.gaodemap.overlays.CircleViewModule",
+      "expo.modules.gaodemap.overlays.PolygonViewModule",
+      "expo.modules.gaodemap.overlays.PolylineViewModule",
+      "expo.modules.gaodemap.overlays.MultiPointViewModule",
+      "expo.modules.gaodemap.overlays.HeatMapViewModule",
+      "expo.modules.gaodemap.overlays.ClusterViewModule"
+    ]
   }
 }

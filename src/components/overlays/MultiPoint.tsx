@@ -1,8 +1,9 @@
+
 import { requireNativeViewManager } from 'expo-modules-core';
 import * as React from 'react';
 import type { MultiPointProps } from '../../types';
 
-const NativeMultiPoint = requireNativeViewManager('ExpoGaodeMap_MultiPointView');
+const NativeMultiPoint = requireNativeViewManager('MultiPointView');
 
 
 /**

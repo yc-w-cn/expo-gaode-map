@@ -233,6 +233,7 @@ export default function App() {
         minZoom={3}
         maxZoom={20}
         onLoad={() => console.log('地图加载完成')}
+        onLocation={(e) => console.log('定位:', e)}
         onMapPress={(e) => console.log('地图点击:', e)}
         onMapLongPress={(e) => console.log('地图长按:', e)}
       >
@@ -251,7 +252,11 @@ export default function App() {
           title="天安门"
           snippet="北京市中心"
           onPress={() => Alert.alert('标记', '点击了天安门标记')}
-        />
+        >
+          {/* <View style={styles.markerContainer}>
+            <Text style={styles.markerText}>自定义内容</Text>
+          </View> */}
+        </Marker>
         
         <Marker
           position={{ latitude: 39.92, longitude: 116.42 }}
@@ -435,5 +440,19 @@ const styles = StyleSheet.create({
   },
   buttonContentContainer: {
     paddingBottom: 30,
+  },
+  markerContainer: {
+    backgroundColor: 'rgba(0, 122, 255, 0.8)',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 4,
+    width: 80,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  markerText: {
+    color: 'white',
+    fontSize: 12,
   },
 });

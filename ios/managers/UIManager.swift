@@ -10,12 +10,16 @@ import MAMapKit
  * - 图层显示管理
  * - 用户位置样式配置
  */
-class UIManager {
+class UIManager: NSObject, MAMapViewDelegate {
     /// 弱引用地图视图,避免循环引用
     private weak var mapView: MAMapView?
     
+    /// 定位变化回调
+    var onLocationChanged: ((_ latitude: Double, _ longitude: Double, _ accuracy: Double) -> Void)?
+    
     init(mapView: MAMapView) {
         self.mapView = mapView
+        super.init()
     }
     
     // MARK: - 地图类型
@@ -97,12 +101,36 @@ class UIManager {
      */
     func setShowsUserLocation(_ show: Bool, followUser: Bool) {
         guard let mapView = mapView else { return }
-        mapView.showsUserLocation = show
-        if show && followUser {
-            mapView.userTrackingMode = .follow
+        
+        if show {
+            // 设置代理以监听定位更新
+            if mapView.delegate == nil {
+                mapView.delegate = self
+            }
+            mapView.showsUserLocation = true
+            if followUser {
+                mapView.userTrackingMode = .follow
+            } else {
+                mapView.userTrackingMode = .none
+            }
         } else {
+            mapView.showsUserLocation = false
             mapView.userTrackingMode = .none
         }
+    }
+    
+    // MARK: - MAMapViewDelegate
+    
+    /**
+     * 定位更新回调
+     */
+    public func mapView(_ mapView: MAMapView, didUpdate userLocation: MAUserLocation, updatingLocation: Bool) {
+        guard updatingLocation, let location = userLocation.location else { return }
+        onLocationChanged?(
+            location.coordinate.latitude,
+            location.coordinate.longitude,
+            location.horizontalAccuracy
+        )
     }
     
     /**
