@@ -3,9 +3,9 @@
  * 基于 Expo Modules API
  */
 
-import type { StyleProp, ViewStyle } from 'react-native';
+import type { StyleProp, ViewStyle,NativeSyntheticEvent } from 'react-native';
 import type { CameraPosition, LatLng, LatLngBounds, MapPoi, MapType, Point } from './common.types';
-import type { Coordinates, ReGeocode } from './location.types';
+
 
 /**
  * 地图相机事件
@@ -168,72 +168,72 @@ export interface MapViewProps {
   /**
    * 点击地图事件
    */
-  onMapPress?: (event: LatLng) => void;
+  onMapPress?: (event: NativeSyntheticEvent<LatLng>) => void;
 
   /**
    * 点击标注点事件
    */
-  onPressPoi?: (event: MapPoi) => void;
+  onPressPoi?: (event: NativeSyntheticEvent<MapPoi>) => void;
 
   /**
    * 长按地图事件
    */
-  onMapLongPress?: (event: LatLng) => void;
+  onMapLongPress?: (event: NativeSyntheticEvent<LatLng>) => void;
 
   /**
    * 地图状态改变事件（实时触发）
    */
-  onCameraMove?: (event: CameraEvent) => void;
+  onCameraMove?: (event: NativeSyntheticEvent<CameraEvent>) => void;
 
   /**
    * 地图状态改变完成事件
    */
-  onCameraIdle?: (event: CameraEvent) => void;
+  onCameraIdle?: (event: NativeSyntheticEvent<CameraEvent>) => void;
 
   /**
    * 地图加载完成事件
    */
-  onLoad?: (event: {}) => void;
+  onLoad?: (event: NativeSyntheticEvent<{}>) => void;
 
   /**
    * 地图定位更新事件
    */
-  onLocation?: (event: Coordinates | ReGeocode) => void;
+  onLocation?: (event: NativeSyntheticEvent<GeolocationPosition>) => void;
 
   /**
    * Marker 点击事件
    */
-  onMarkerPress?: (event: { markerId: string } & LatLng) => void;
+  onMarkerPress?: (event: NativeSyntheticEvent<{ markerId: string } & LatLng>) => void;
 
   /**
    * Marker 拖拽开始事件
    */
-  onMarkerDragStart?: (event: { markerId: string } & LatLng) => void;
+  onMarkerDragStart?: (event: NativeSyntheticEvent<{ markerId: string } & LatLng>) => void;
 
   /**
    * Marker 拖拽中事件
    */
-  onMarkerDrag?: (event: { markerId: string } & LatLng) => void;
+  onMarkerDrag?: (event: NativeSyntheticEvent<{ markerId: string } & LatLng>) => void;
 
   /**
    * Marker 拖拽结束事件
    */
-  onMarkerDragEnd?: (event: { markerId: string } & LatLng) => void;
+  onMarkerDragEnd?: (event: NativeSyntheticEvent<{ markerId: string } & LatLng>) => void;
 
   /**
    * Circle 点击事件
    */
-  onCirclePress?: (event: { circleId: string } & LatLng) => void;
+  onCirclePress?: (event: NativeSyntheticEvent<{ circleId: string } & LatLng>) => void;
 
   /**
    * Polygon 点击事件
    */
-  onPolygonPress?: (event: { polygonId: string } & LatLng) => void;
+  onPolygonPress?: (event: NativeSyntheticEvent<{ polygonId: string } & LatLng>) => void;
 
   /**
    * Polyline 点击事件
    */
-  onPolylinePress?: (event: { polylineId: string } & LatLng) => void;
+  onPolylinePress?: (event: NativeSyntheticEvent<{ polylineId: string } & LatLng>) => void;
 
   /**
    * 子组件

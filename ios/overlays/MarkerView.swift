@@ -270,6 +270,26 @@ class MarkerView: ExpoView {
         return UIGraphicsGetImageFromCurrentImageContext()
     }
     
+    override func willRemoveSubview(_ subview: UIView) {
+        super.willRemoveSubview(subview)
+        
+        // 子视图即将被移除，延迟检查并更新图标
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
+            guard let self = self else { return }
+            
+            if self.subviews.isEmpty {
+                // 所有子视图已移除，恢复默认图标
+                if let annotationView = self.annotationView {
+                    annotationView.image = self.createDefaultMarkerImage()
+                    annotationView.centerOffset = CGPoint(x: 0, y: -18)
+                }
+            } else {
+                // 还有子视图，更新图标
+                self.updateMarkerImage()
+            }
+        }
+    }
+    
     override func didAddSubview(_ subview: UIView) {
         super.didAddSubview(subview)
         

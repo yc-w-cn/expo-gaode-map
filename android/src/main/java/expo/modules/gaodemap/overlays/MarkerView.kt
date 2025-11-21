@@ -545,8 +545,45 @@ class MarkerView(context: Context, appContext: AppContext) : ExpoView(context, a
 }
 
   
+  override fun removeView(child: View?) {
+    android.util.Log.d("MarkerView", "➖ removeView 被调用，child = $child, childCount = $childCount")
+    super.removeView(child)
+    
+    // 子视图被移除后，清除图标或恢复默认图标
+    mainHandler.postDelayed({
+      android.util.Log.d("MarkerView", "⏰ removeView 延迟更新，childCount = $childCount")
+      if (childCount == 0 && marker != null) {
+        android.util.Log.d("MarkerView", "📍 所有子视图已移除，恢复默认图标")
+        marker?.setIcon(BitmapDescriptorFactory.defaultMarker())
+        marker?.setAnchor(0.5f, 1.0f)
+      }
+    }, 50)
+  }
+  
+  override fun removeViewAt(index: Int) {
+    android.util.Log.d("MarkerView", "➖ removeViewAt 被调用，index = $index, childCount = $childCount")
+    if (index >= 0 && index < childCount) {
+      super.removeViewAt(index)
+      
+      // 子视图被移除后，清除图标或恢复默认图标
+      mainHandler.postDelayed({
+        android.util.Log.d("MarkerView", "⏰ removeViewAt 延迟更新，childCount = $childCount")
+        if (childCount == 0 && marker != null) {
+          android.util.Log.d("MarkerView", "📍 所有子视图已移除，恢复默认图标")
+          marker?.setIcon(BitmapDescriptorFactory.defaultMarker())
+          marker?.setAnchor(0.5f, 1.0f)
+        } else if (childCount > 0 && marker != null) {
+          android.util.Log.d("MarkerView", "🔄 还有子视图，更新图标")
+          updateMarkerIcon()
+        }
+      }, 50)
+    } else {
+      android.util.Log.w("MarkerView", "⚠️ removeViewAt: 无效的索引 $index，childCount = $childCount")
+    }
+  }
+  
   override fun addView(child: View?, index: Int, params: android.view.ViewGroup.LayoutParams?) {
-    android.util.Log.d("MarkerView", "➕ addView 被调用，child = $child")
+    android.util.Log.d("MarkerView", "➕ addView 被调用，child = $child, index = $index, childCount = $childCount")
     super.addView(child, index, params)
     
     // 延迟更新图标，等待 React Native 样式和内容渲染

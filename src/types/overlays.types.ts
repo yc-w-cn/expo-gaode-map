@@ -3,7 +3,7 @@
  * 基于 Expo Modules API
  */
 
-import type { ImageSourcePropType, ViewStyle } from 'react-native';
+import type { ImageSourcePropType, ViewStyle, NativeSyntheticEvent } from 'react-native';
 import type { ColorValue, LatLng, Point } from './common.types';
 
 /**
@@ -116,22 +116,22 @@ export interface MarkerProps {
   /**
    * 点击事件
    */
-  onPress?: () => void;
+  onPress?: (event: NativeSyntheticEvent<{}>) => void;
 
   /**
    * 拖拽开始事件
    */
-  onDragStart?: () => void;
+  onDragStart?: (event: NativeSyntheticEvent<LatLng>) => void;
 
   /**
    * 拖拽中事件
    */
-  onDrag?: () => void;
+  onDrag?: (event: NativeSyntheticEvent<LatLng>) => void;
 
   /**
    * 拖拽结束事件
    */
-  onDragEnd?: (event: { nativeEvent: LatLng }) => void;
+  onDragEnd?: (event: NativeSyntheticEvent<LatLng>) => void;
 }
 
 /**
@@ -193,7 +193,7 @@ export interface PolylineProps {
   /**
    * 点击事件
    */
-  onPress?: () => void;
+  onPress?: (event: NativeSyntheticEvent<{}>) => void;
 }
 
 /**
@@ -228,7 +228,7 @@ export interface PolygonProps {
   /**
    * 点击事件
    */
-  onPress?: () => void;
+  onPress?: (event: NativeSyntheticEvent<{}>) => void;
 }
 
 /**
@@ -268,7 +268,7 @@ export interface CircleProps {
   /**
    * 点击事件
    */
-  onPress?: () => void;
+  onPress?: (event: NativeSyntheticEvent<{}>) => void;
 
   /**
    * 自定义子元素
@@ -330,7 +330,7 @@ export interface MultiPointProps {
   /**
    * 点击事件
    */
-  onPress?: (event: { nativeEvent: { index: number; item: MultiPointItem } }) => void;
+  onPress?: (event: NativeSyntheticEvent<{ index: number; item: MultiPointItem }>) => void;
 }
 
 /**
@@ -405,5 +405,5 @@ export interface ClusterProps {
   /**
    * 聚合点点击事件
    */
-  onPress?: (params: ClusterParams) => void;
+  onPress?: (event: NativeSyntheticEvent<ClusterParams>) => void;
 }

@@ -27,6 +27,20 @@ export default function App() {
   const [location, setLocation] = useState<Coordinates | ReGeocode | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [initialPosition, setInitialPosition] = useState<CameraPosition | null>(null);
+  
+  // 用于测试动态更新 Marker 内容
+  const [markerContent, setMarkerContent] = useState<'text1' | 'text2' | 'none'>('text1');
+  const [markerUpdateCount, setMarkerUpdateCount] = useState(0);
+  
+  // 用于测试 Marker 动态添加/删除和位置变化
+  const [dynamicMarkers, setDynamicMarkers] = useState<Array<{
+    id: string;
+    latitude: number;
+    longitude: number;
+    content: string;
+    color: string;
+  }>>([]);
+  const markerIdCounter = useRef(0);
 
   useEffect(() => {
     const init = async () => {
@@ -209,6 +223,98 @@ export default function App() {
     }
   };
 
+  // 测试动态更新 Marker 内容
+  const handleToggleMarkerContent = () => {
+    setMarkerUpdateCount(prev => prev + 1);
+    
+    if (markerContent === 'text1') {
+      setMarkerContent('text2');
+      Alert.alert('切换内容', '已切换到文本2');
+    } else if (markerContent === 'text2') {
+      setMarkerContent('none');
+      Alert.alert('移除内容', '已移除自定义内容（显示默认图标）');
+    } else {
+      setMarkerContent('text1');
+      Alert.alert('切换内容', '已切换到文本1');
+    }
+  };
+
+  // 添加一个随机位置的 Marker
+  const handleAddRandomMarker = () => {
+    if (!location) {
+      Alert.alert('提示', '请等待定位完成');
+      return;
+    }
+    
+    const colors = ['#FF5722', '#2196F3', '#4CAF50', '#FF9800', '#9C27B0', '#00BCD4'];
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+    const randomOffset = () => (Math.random() - 0.5) * 0.02;
+    
+    const newMarker = {
+      id: `dynamic_${markerIdCounter.current++}`,
+      latitude: location.latitude + randomOffset(),
+      longitude: location.longitude + randomOffset(),
+      content: `标记 #${markerIdCounter.current}`,
+      color: randomColor,
+    };
+    
+    setDynamicMarkers(prev => [...prev, newMarker]);
+    Alert.alert('成功', `已添加标记 #${markerIdCounter.current}\n当前共 ${dynamicMarkers.length + 1} 个动态标记`);
+  };
+
+  // 移除最后一个 Marker
+  const handleRemoveLastMarker = () => {
+    if (dynamicMarkers.length === 0) {
+      Alert.alert('提示', '没有可移除的标记');
+      return;
+    }
+    
+    setDynamicMarkers(prev => prev.slice(0, -1));
+    Alert.alert('成功', `已移除最后一个标记\n剩余 ${dynamicMarkers.length - 1} 个动态标记`);
+  };
+
+  // 移除所有动态 Marker
+  const handleRemoveAllMarkers = () => {
+    if (dynamicMarkers.length === 0) {
+      Alert.alert('提示', '没有可移除的标记');
+      return;
+    }
+    
+    const count = dynamicMarkers.length;
+    setDynamicMarkers([]);
+    Alert.alert('成功', `已移除所有 ${count} 个动态标记`);
+  };
+
+  // 随机移动所有 Marker 位置
+  const handleMoveAllMarkers = () => {
+    if (dynamicMarkers.length === 0) {
+      Alert.alert('提示', '没有可移动的标记');
+      return;
+    }
+    
+    const randomOffset = () => (Math.random() - 0.5) * 0.01;
+    setDynamicMarkers(prev => prev.map(marker => ({
+      ...marker,
+      latitude: marker.latitude + randomOffset(),
+      longitude: marker.longitude + randomOffset(),
+    })));
+    Alert.alert('成功', `已移动所有 ${dynamicMarkers.length} 个标记`);
+  };
+
+  // 更新所有 Marker 内容
+  const handleUpdateAllMarkerContent = () => {
+    if (dynamicMarkers.length === 0) {
+      Alert.alert('提示', '没有可更新的标记');
+      return;
+    }
+    
+    setDynamicMarkers(prev => prev.map(marker => ({
+      ...marker,
+      content: `${marker.content} ✨`,
+    })));
+    Alert.alert('成功', `已更新所有 ${dynamicMarkers.length} 个标记内容`);
+  };
+
   if (!initialPosition) {
     return (
       <View style={styles.container}>
@@ -266,6 +372,48 @@ export default function App() {
           </Marker>
         )}
         
+        {/* 动态更新测试 Marker */}
+        {location && (
+          <Marker
+            position={{ latitude: location.latitude + 0.005, longitude: location.longitude + 0.005 }}
+            title="动态内容测试"
+            customViewWidth={250}
+            customViewHeight={60}
+            onPress={() => Alert.alert('动态 Marker', `点击了动态内容标记\n更新次数: ${markerUpdateCount}`)}
+          >
+            {markerContent === 'text1' && (
+              <View style={styles.dynamicMarkerContainer1}>
+                <Text style={styles.dynamicMarkerText}>🔵 动态内容 1</Text>
+                <Text style={styles.dynamicMarkerSubText}>点击下方按钮切换</Text>
+              </View>
+            )}
+            {markerContent === 'text2' && (
+              <View style={styles.dynamicMarkerContainer2}>
+                <Text style={styles.dynamicMarkerText}>🟢 动态内容 2</Text>
+                <Text style={styles.dynamicMarkerSubText}>不同的样式和文字</Text>
+              </View>
+            )}
+            {/* markerContent === 'none' 时不渲染任何子视图，应该显示默认图标 */}
+          </Marker>
+        )}
+        
+        {/* 动态添加/删除的 Marker 列表 */}
+        {dynamicMarkers.map((marker) => (
+          <Marker
+            key={marker.id}
+            position={{ latitude: marker.latitude, longitude: marker.longitude }}
+            title={marker.content}
+            customViewWidth={180}
+            customViewHeight={50}
+            onPress={() => Alert.alert('动态标记', `点击了 ${marker.content}\nID: ${marker.id}`)}
+          >
+            <View style={[styles.dynamicMarkerItem, { borderColor: marker.color }]}>
+              <Text style={[styles.dynamicMarkerItemText, { color: marker.color }]}>
+                {marker.content}
+              </Text>
+            </View>
+          </Marker>
+        ))}
         
         <Marker
           position={{ latitude: 39.92, longitude: 116.42 }}
@@ -396,6 +544,55 @@ export default function App() {
         <Button title="添加多边形" onPress={handleAddPolygonByRef} color="#FF5722" />
         <View style={styles.buttonSpacer} />
         <Button title="移除所有命令式覆盖物" onPress={handleRemoveImperativeOverlays} color="#FF6347" />
+        
+        <View style={styles.sectionSpacer} />
+        <Text style={styles.sectionTitle}>Marker 内容动态更新</Text>
+        <Text style={styles.testDescription}>
+          测试修复：切换内容时不再崩溃{'\n'}
+          当前状态: {markerContent === 'text1' ? '文本1' : markerContent === 'text2' ? '文本2' : '无内容(默认图标)'}{'\n'}
+          更新次数: {markerUpdateCount}
+        </Text>
+        <Button
+          title="切换 Marker 内容"
+          onPress={handleToggleMarkerContent}
+          color="#E91E63"
+        />
+        
+        <View style={styles.sectionSpacer} />
+        <Text style={styles.sectionTitle}>Marker 动态添加/删除/移动</Text>
+        <Text style={styles.testDescription}>
+          全面测试 Marker 生命周期{'\n'}
+          当前动态标记数量: {dynamicMarkers.length}
+        </Text>
+        <Button
+          title="添加随机位置标记"
+          onPress={handleAddRandomMarker}
+          color="#4CAF50"
+        />
+        <View style={styles.buttonSpacer} />
+        <Button
+          title="移除最后一个标记"
+          onPress={handleRemoveLastMarker}
+          color="#FF9800"
+        />
+        <View style={styles.buttonSpacer} />
+        <Button
+          title="移动所有标记位置"
+          onPress={handleMoveAllMarkers}
+          color="#2196F3"
+        />
+        <View style={styles.buttonSpacer} />
+        <Button
+          title="更新所有标记内容"
+          onPress={handleUpdateAllMarkerContent}
+          color="#9C27B0"
+        />
+        <View style={styles.buttonSpacer} />
+        <Button
+          title="移除所有动态标记"
+          onPress={handleRemoveAllMarkers}
+          color="#FF6347"
+        />
       </ScrollView>
     </View>
   );
@@ -465,7 +662,75 @@ const styles = StyleSheet.create({
   markerText: {
     color: 'black',
     fontSize: 12,
- 
-
+  },
+  dynamicMarkerContainer1: {
+    backgroundColor: '#E3F2FD',
+    borderColor: '#2196F3',
+    borderWidth: 2,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    width: 250,
+    height: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  dynamicMarkerContainer2: {
+    backgroundColor: '#E8F5E9',
+    borderColor: '#4CAF50',
+    borderWidth: 2,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    width: 250,
+    height: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  dynamicMarkerText: {
+    color: '#333',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  dynamicMarkerSubText: {
+    color: '#666',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  testDescription: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 10,
+    lineHeight: 18,
+  },
+  dynamicMarkerItem: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 3,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    width: 180,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 6,
+  },
+  dynamicMarkerItemText: {
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });

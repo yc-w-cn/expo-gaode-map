@@ -1,5 +1,6 @@
 import { requireNativeViewManager } from 'expo-modules-core';
 import * as React from 'react';
+import { NativeSyntheticEvent } from 'react-native';
 import { EventManager } from './utils/EventManager';
 import type {
   MapViewProps,
@@ -21,14 +22,14 @@ const NativeView: React.ComponentType<MapViewProps & { ref?: React.Ref<NativeMap
 export const MapContext = React.createContext<React.RefObject<MapViewRef | null> | null>(null);
 
 type MarkerEventCallbacks = {
-  onPress?: () => void;
-  onDragStart?: () => void;
-  onDrag?: () => void;
-  onDragEnd?: (event: { nativeEvent: LatLng }) => void;
+  onPress?: (event: NativeSyntheticEvent<{}>) => void;
+  onDragStart?: (event: NativeSyntheticEvent<LatLng>) => void;
+  onDrag?: (event: NativeSyntheticEvent<LatLng>) => void;
+  onDragEnd?: (event: NativeSyntheticEvent<LatLng>) => void;
 };
 
 type OverlayEventCallbacks = {
-  onPress?: () => void;
+  onPress?: (event: NativeSyntheticEvent<{}>) => void;
 };
 
 export const MarkerEventContext = React.createContext<EventManager<MarkerEventCallbacks> | null>(null);
@@ -63,50 +64,45 @@ const ExpoGaodeMapView = React.forwardRef<MapViewRef, MapViewProps>((props, ref)
   const polylineEventManager = React.useMemo(() => new EventManager<OverlayEventCallbacks>(), []);
   const handleMarkerPress = (event: any) => {
     const markerId = event.nativeEvent?.markerId;
-    if (markerId) markerEventManager.trigger(markerId, 'onPress');
+    if (markerId) markerEventManager.trigger(markerId, 'onPress', event);
     props.onMarkerPress?.(event);
   };
   
   const handleMarkerDragStart = (event: any) => {
     const markerId = event.nativeEvent?.markerId;
-    if (markerId) markerEventManager.trigger(markerId, 'onDragStart');
+    if (markerId) markerEventManager.trigger(markerId, 'onDragStart', event);
     props.onMarkerDragStart?.(event);
   };
   
   const handleMarkerDrag = (event: any) => {
     const markerId = event.nativeEvent?.markerId;
-    if (markerId) markerEventManager.trigger(markerId, 'onDrag');
+    if (markerId) markerEventManager.trigger(markerId, 'onDrag', event);
     props.onMarkerDrag?.(event);
   };
   
   const handleMarkerDragEnd = (event: any) => {
     const markerId = event.nativeEvent?.markerId;
     if (markerId) {
-      markerEventManager.trigger(markerId, 'onDragEnd', {
-        nativeEvent: {
-          latitude: event.nativeEvent.latitude,
-          longitude: event.nativeEvent.longitude
-        }
-      });
+      markerEventManager.trigger(markerId, 'onDragEnd', event);
     }
     props.onMarkerDragEnd?.(event);
   };
   
   const handleCirclePress = (event: any) => {
     const circleId = event.nativeEvent?.circleId;
-    if (circleId) circleEventManager.trigger(circleId, 'onPress');
+    if (circleId) circleEventManager.trigger(circleId, 'onPress', event);
     props.onCirclePress?.(event);
   };
   
   const handlePolygonPress = (event: any) => {
     const polygonId = event.nativeEvent?.polygonId;
-    if (polygonId) polygonEventManager.trigger(polygonId, 'onPress');
+    if (polygonId) polygonEventManager.trigger(polygonId, 'onPress', event);
     props.onPolygonPress?.(event);
   };
   
   const handlePolylinePress = (event: any) => {
     const polylineId = event.nativeEvent?.polylineId;
-    if (polylineId) polylineEventManager.trigger(polylineId, 'onPress');
+    if (polylineId) polylineEventManager.trigger(polylineId, 'onPress', event);
     props.onPolylinePress?.(event);
   };
 

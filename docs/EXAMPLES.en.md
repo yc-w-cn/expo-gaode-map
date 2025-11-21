@@ -190,7 +190,7 @@ export default function App() {
         myLocationEnabled={true}
         followUserLocation={false}
         trafficEnabled={true}
-        onMapPress={(e) => console.log('Map pressed', e)}
+        onMapPress={(e) => console.log('Map pressed', e.nativeEvent)}
         onLoad={() => console.log('Map loaded')}
       >
         {/* Circle overlay */}
@@ -426,7 +426,7 @@ const styles = StyleSheet.create({
     fillColor="#8800FF00"
     strokeColor="#FFFF0000"
     strokeWidth={2}
-    onPress={() => console.log('Circle pressed')}
+    onPress={(e) => console.log('Circle pressed')}
   />
 </MapView>
 ```
@@ -460,7 +460,7 @@ await mapRef.current?.removeCircle('circle1');
     title="Title"
     snippet="Description"
     draggable={true}
-    onPress={() => console.log('Marker pressed')}
+    onPress={(e) => console.log('Marker pressed')}
     onDragEnd={(e) => console.log('Drag ended', e.nativeEvent)}
   />
 </MapView>
@@ -479,7 +479,7 @@ const iconUri = Image.resolveAssetSource(require('./assets/marker-icon.png')).ur
     icon={iconUri}
     iconWidth={50}
     iconHeight={50}
-    onPress={() => console.log('Custom icon marker pressed')}
+    onPress={(e) => console.log('Custom icon marker pressed')}
   />
 </MapView>
 ```
@@ -493,7 +493,7 @@ import { View, Text, StyleSheet } from 'react-native';
     position={{ latitude: 39.9, longitude: 116.4 }}
     customViewWidth={120}
     customViewHeight={40}
-    onPress={() => console.log('Custom view marker pressed')}
+    onPress={(e) => console.log('Custom view marker pressed')}
   >
     <View style={styles.markerContainer}>
       <Text style={styles.markerText}>Custom Content</Text>
@@ -554,7 +554,7 @@ await mapRef.current?.removeMarker('marker1');
     ]}
     width={5}
     color="#FFFF0000"
-    onPress={() => console.log('Polyline pressed')}
+    onPress={(e) => console.log('Polyline pressed')}
   />
 </MapView>
 ```
@@ -575,7 +575,7 @@ const iconUri = Image.resolveAssetSource(require('./assets/arrow.png')).uri;
     width={20}
     color="#FFFF0000"
     texture={iconUri}
-    onPress={() => console.log('Textured polyline pressed')}
+    onPress={(e) => console.log('Textured polyline pressed')}
   />
 </MapView>
 ```
@@ -601,7 +601,7 @@ const iconUri = Image.resolveAssetSource(require('./assets/arrow.png')).uri;
     fillColor="#8800FF00"
     strokeColor="#FFFF0000"
     strokeWidth={2}
-    onPress={() => console.log('Polygon pressed')}
+    onPress={(e) => console.log('Polygon pressed')}
   />
 </MapView>
 ```

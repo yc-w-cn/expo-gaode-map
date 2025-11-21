@@ -190,7 +190,7 @@ export default function App() {
         myLocationEnabled={true}
         followUserLocation={false}
         trafficEnabled={true}
-        onMapPress={(e) => console.log('点击地图', e)}
+        onMapPress={(e) => console.log('点击地图', e.nativeEvent)}
         onLoad={() => console.log('地图加载完成')}
       >
         {/* 圆形覆盖物 */}
@@ -426,7 +426,7 @@ const styles = StyleSheet.create({
     fillColor="#8800FF00"
     strokeColor="#FFFF0000"
     strokeWidth={2}
-    onPress={() => console.log('点击圆形')}
+    onPress={(e) => console.log('点击圆形')}
   />
 </MapView>
 ```
@@ -462,7 +462,7 @@ await mapRef.current?.removeCircle('circle1');
     title="标题"
     snippet="描述信息"
     draggable={true}
-    onPress={() => console.log('点击标记')}
+    onPress={(e) => console.log('点击标记')}
     onDragEnd={(e) => console.log('拖动结束', e.nativeEvent)}
   />
 </MapView>
@@ -501,7 +501,7 @@ const iconUri = Image.resolveAssetSource(require('./assets/marker-icon.png')).ur
     icon={iconUri}
     iconWidth={50}
     iconHeight={50}
-    onPress={() => console.log('点击自定义图标标记')}
+    onPress={(e) => console.log('点击自定义图标标记')}
   />
 </MapView>
 ```
@@ -524,7 +524,7 @@ import { View, Text, StyleSheet } from 'react-native';
     position={{ latitude: 39.9, longitude: 116.4 }}
     customViewWidth={200}
     customViewHeight={50}
-    onPress={() => Alert.alert('标记', '点击了自定义标记')}
+    onPress={(e) => Alert.alert('标记', '点击了自定义标记')}
   >
     <View style={styles.markerContainer}>
       <Text style={styles.markerText}>北京市中心</Text>
@@ -624,7 +624,7 @@ function LocationMarker({ location }: { location: Location }) {
       }}
       customViewWidth={220}
       customViewHeight={60}
-      onPress={() => Alert.alert('位置', location.address)}
+      onPress={(e) => Alert.alert('位置', location.address)}
     >
       <View style={styles.locationMarker}>
         <Text style={styles.locationTitle} numberOfLines={1}>
@@ -761,8 +761,8 @@ import { Platform } from 'react-native';
     position={{ latitude: 39.9, longitude: 116.4 }}
     title="可拖拽标记"
     draggable={true}
-    onDragStart={() => console.log('开始拖拽')}
-    onDrag={() => console.log('拖拽中')}
+    onDragStart={(e) => console.log('开始拖拽', e.nativeEvent)}
+    onDrag={(e) => console.log('拖拽中', e.nativeEvent)}
     onDragEnd={(e) => {
       const { latitude, longitude } = e.nativeEvent;
       console.log(`拖拽结束: ${latitude}, ${longitude}`);
@@ -785,7 +785,7 @@ import { Platform } from 'react-native';
     ]}
     width={5}
     color="#FFFF0000"
-    onPress={() => console.log('点击折线')}
+    onPress={(e) => console.log('点击折线')}
   />
 </MapView>
 ```
@@ -806,7 +806,7 @@ const iconUri = Image.resolveAssetSource(require('./assets/arrow.png')).uri;
     width={20}
     color="#FFFF0000"
     texture={iconUri}
-    onPress={() => console.log('点击纹理折线')}
+    onPress={(e) => console.log('点击纹理折线')}
   />
 </MapView>
 ```
@@ -877,7 +877,7 @@ await mapRef.current?.addPolyline('segment2', {
     fillColor="#8800FF00"
     strokeColor="#FFFF0000"
     strokeWidth={2}
-    onPress={() => console.log('点击多边形')}
+    onPress={(e) => console.log('点击多边形')}
   />
 </MapView>
 ```

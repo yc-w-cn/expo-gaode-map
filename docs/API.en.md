@@ -95,9 +95,9 @@ Complete API reference documentation.
 
 | Event | Parameters | Description |
 |-------|------------|-------------|
-| `onMapPress` | `(event: LatLng) => void` | Map press event |
-| `onMapLongPress` | `(event: LatLng) => void` | Map long press event |
-| `onLoad` | `() => void` | Map load complete event |
+| `onMapPress` | `(event: NativeSyntheticEvent<LatLng>) => void` | Map press event |
+| `onMapLongPress` | `(event: NativeSyntheticEvent<LatLng>) => void` | Map long press event |
+| `onLoad` | `(event: NativeSyntheticEvent<{}>) => void` | Map load complete event |
 
 ## MapView Methods
 
@@ -270,7 +270,7 @@ Based on AMap official recommendations, this library uses the following default 
 
 | Event | Parameters | Description |
 |-------|------------|-------------|
-| `onPress` | `() => void` | Circle press |
+| `onPress` | `(event: NativeSyntheticEvent<{}>) => void` | Circle press |
 
 ### Polyline
 
@@ -290,7 +290,7 @@ Based on AMap official recommendations, this library uses the following default 
 
 | Event | Parameters | Description |
 |-------|------------|-------------|
-| `onPress` | `() => void` | Polyline press |
+| `onPress` | `(event: NativeSyntheticEvent<{}>) => void` | Polyline press |
 
 > **Texture Notes**:
 > - Supports network images (http/https) and local files (use `Image.resolveAssetSource()`)
@@ -313,7 +313,7 @@ Based on AMap official recommendations, this library uses the following default 
 
 | Event | Parameters | Description |
 |-------|------------|-------------|
-| `onPress` | `() => void` | Polygon press |
+| `onPress` | `(event: NativeSyntheticEvent<{}>) => void` | Polygon press |
 
 ### Marker
 
@@ -342,10 +342,10 @@ Based on AMap official recommendations, this library uses the following default 
 
 | Event | Parameters | Description |
 |-------|------------|-------------|
-| `onPress` | `() => void` | Marker press |
-| `onDragStart` | `() => void` | Drag start |
-| `onDrag` | `() => void` | Dragging |
-| `onDragEnd` | `(event: { nativeEvent: LatLng }) => void` | Drag end |
+| `onPress` | `(event: NativeSyntheticEvent<{}>) => void` | Marker press |
+| `onDragStart` | `(event: NativeSyntheticEvent<LatLng>) => void` | Drag start |
+| `onDrag` | `(event: NativeSyntheticEvent<LatLng>) => void` | Dragging |
+| `onDragEnd` | `(event: NativeSyntheticEvent<LatLng>) => void` | Drag end |
 
 > **⚠️ Important**: Event callbacks only work in **declarative usage**. Markers added via imperative API (`addMarker`) cannot trigger these events.
 

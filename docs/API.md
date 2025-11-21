@@ -95,9 +95,9 @@
 
 | 事件 | 参数 | 说明 |
 |------|------|------|
-| `onMapPress` | `(event: LatLng) => void` | 点击地图事件 |
-| `onMapLongPress` | `(event: LatLng) => void` | 长按地图事件 |
-| `onLoad` | `() => void` | 地图加载完成事件 |
+| `onMapPress` | `(event: NativeSyntheticEvent<LatLng>) => void` | 点击地图事件 |
+| `onMapLongPress` | `(event: NativeSyntheticEvent<LatLng>) => void` | 长按地图事件 |
+| `onLoad` | `(event: NativeSyntheticEvent<{}>) => void` | 地图加载完成事件 |
 
 ## MapView 方法
 
@@ -270,7 +270,7 @@ configure({
 
 | 事件 | 参数 | 说明 |
 |------|------|------|
-| `onPress` | `() => void` | 点击圆形 |
+| `onPress` | `(event: NativeSyntheticEvent<{}>) => void` | 点击圆形 |
 
 ### Polyline (折线)
 
@@ -290,7 +290,7 @@ configure({
 
 | 事件 | 参数 | 说明 |
 |------|------|------|
-| `onPress` | `() => void` | 点击折线 |
+| `onPress` | `(event: NativeSyntheticEvent<{}>) => void` | 点击折线 |
 
 > **纹理说明**：
 > - 支持网络图片（http/https）和本地文件（使用 `Image.resolveAssetSource()`）
@@ -313,7 +313,7 @@ configure({
 
 | 事件 | 参数 | 说明 |
 |------|------|------|
-| `onPress` | `() => void` | 点击多边形 |
+| `onPress` | `(event: NativeSyntheticEvent<{}>) => void` | 点击多边形 |
 
 ### Marker (标记点)
 
@@ -343,10 +343,10 @@ configure({
 
 | 事件 | 参数 | 说明 |
 |------|------|------|
-| `onPress` | `() => void` | 点击标记点 |
-| `onDragStart` | `() => void` | 开始拖拽 |
-| `onDrag` | `() => void` | 拖拽中 |
-| `onDragEnd` | `(event: { nativeEvent: LatLng }) => void` | 拖拽结束 |
+| `onPress` | `(event: NativeSyntheticEvent<{}>) => void` | 点击标记点 |
+| `onDragStart` | `(event: NativeSyntheticEvent<LatLng>) => void` | 开始拖拽 |
+| `onDrag` | `(event: NativeSyntheticEvent<LatLng>) => void` | 拖拽中 |
+| `onDragEnd` | `(event: NativeSyntheticEvent<LatLng>) => void` | 拖拽结束 |
 
 > **⚠️ 重要提示**：事件回调仅在**声明式用法**中有效。使用命令式 API（`addMarker`）添加的标记点无法触发这些事件。
 
