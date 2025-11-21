@@ -27,6 +27,18 @@ import expo.modules.gaodemap.overlays.*
 @Suppress("ViewConstructor")
 class ExpoGaodeMapView(context: Context, appContext: AppContext) : ExpoView(context, appContext) {
   
+  /**
+   * 拦截 React Native 的 ViewManager 操作
+   * 重写 requestLayout 防止在移除视图时触发布局异常
+   */
+  override fun requestLayout() {
+    try {
+      super.requestLayout()
+    } catch (e: Exception) {
+      Log.e(TAG, "requestLayout 异常被捕获", e)
+    }
+  }
+  
   companion object {
     private const val TAG = "ExpoGaodeMapView"
   }
@@ -504,12 +516,23 @@ class ExpoGaodeMapView(context: Context, appContext: AppContext) : ExpoView(cont
   
   /**
    * 添加子视图时自动连接到地图
+   *
+   * 关键修复：MarkerView 不进入视图层级，但要确保 React Native 追踪正确
    */
   override fun addView(child: View?, index: Int) {
     if (child is MarkerView) {
-      // 不添加到视图层级,只调用 setMap 并保存引用
+      // ✅ MarkerView 不加入视图层级
       child.setMap(aMap)
       markerViews.add(child)
+      Log.d(TAG, "✅ MarkerView 已添加到特殊列表（不在视图层级中），数量: ${markerViews.size}")
+      // ⚠️ 不调用 super.addView，所以 React Native 不会追踪它
+      return
+    }
+    
+    // ⚠️ 如果是 MapView 本身，必须添加
+    if (child is com.amap.api.maps.MapView) {
+      super.addView(child, index)
+      Log.d(TAG, "✅ MapView 已添加")
       return
     }
     
@@ -533,22 +556,73 @@ class ExpoGaodeMapView(context: Context, appContext: AppContext) : ExpoView(cont
    */
   override fun removeView(child: View?) {
     if (child is MarkerView) {
-      // 从 MarkerView 列表中移除
+      // 从 MarkerView 列表中移除并清理
       markerViews.remove(child)
+      child.removeMarker()
+      Log.d(TAG, "✅ MarkerView 已清理，当前 markerViews 数量: ${markerViews.size}")
       return
     }
-    super.removeView(child)
+    
+    try {
+      super.removeView(child)
+    } catch (e: Exception) {
+      Log.e(TAG, "removeView 异常", e)
+    }
   }
   
   /**
    * 按索引移除视图
+   *
+   * 终极修复：完全忽略所有无效的移除请求
    */
   override fun removeViewAt(index: Int) {
-    // 检查是否在尝试移除不存在的索引
-    if (index >= 0 && index < childCount) {
+    try {
+      val actualChildCount = super.getChildCount()
+      
+      Log.d(TAG, "removeViewAt 调用: index=$index, super.childCount=$actualChildCount")
+      
+      // ✅ 如果没有子视图，直接返回
+      if (actualChildCount == 0) {
+        Log.w(TAG, "⚠️ 无子视图，忽略: index=$index")
+        return
+      }
+      
+      // ✅ 索引越界，直接返回
+      if (index < 0 || index >= actualChildCount) {
+        Log.w(TAG, "⚠️ 索引越界，忽略: index=$index, childCount=$actualChildCount")
+        return
+      }
+      
+      // 检查要移除的视图类型
+      val child = super.getChildAt(index)
+      
+      // ❌ MapView 绝对不能移除
+      if (child is com.amap.api.maps.MapView) {
+        Log.e(TAG, "❌ 阻止移除 MapView！index=$index")
+        // 不移除，直接返回
+        return
+      }
+      
+      // MarkerView 特殊处理（虽然理论上不应该出现在这里）
+      if (child is MarkerView) {
+        Log.d(TAG, "⚠️ 发现 MarkerView 在视图层级中，使用 removeView")
+        removeView(child)
+        return
+      }
+      
+      // 正常移除其他视图
       super.removeViewAt(index)
-    } else {
-      Log.w(TAG, "尝试移除无效的视图索引: $index, 当前子视图数: $childCount")
+      Log.d(TAG, "✅ 成功移除视图: index=$index")
+      
+    } catch (e: IllegalArgumentException) {
+      // 索引异常，静默忽略
+      Log.w(TAG, "⚠️ 索引异常，已忽略: ${e.message}")
+    } catch (e: IndexOutOfBoundsException) {
+      // 越界异常，静默忽略
+      Log.w(TAG, "⚠️ 越界异常，已忽略: ${e.message}")
+    } catch (e: Exception) {
+      // 其他所有异常，静默忽略
+      Log.e(TAG, "⚠️ 移除视图异常，已忽略", e)
     }
   }
   
