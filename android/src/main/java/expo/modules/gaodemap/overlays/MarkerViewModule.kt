@@ -13,51 +13,56 @@ class MarkerViewModule : Module() {
     View(MarkerView::class) {
       Events("onPress", "onDragStart", "onDrag", "onDragEnd")
       
-      Prop<Map<String, Double>>("position") { view: MarkerView, position ->
-        view.setPosition(position)
+      // 拆分 position 为两个独立属性以兼容 React Native 旧架构
+      Prop<Double>("latitude") { view, lat ->
+        view.setLatitude(lat)
       }
       
-      Prop<String>("title") { view: MarkerView, title ->
+      Prop<Double>("longitude") { view, lng ->
+        view.setLongitude(lng)
+      }
+      
+      Prop<String>("title") { view, title ->
         view.setTitle(title)
       }
       
-      Prop<String>("description") { view: MarkerView, description ->
+      Prop<String>("description") { view, description ->
         view.setDescription(description)
       }
       
-      Prop<Boolean>("draggable") { view: MarkerView, draggable ->
+      Prop<Boolean>("draggable") { view, draggable ->
         view.setDraggable(draggable)
       }
       
-      Prop<Float>("opacity") { view: MarkerView, opacity ->
+      Prop<Float>("opacity") { view, opacity ->
         view.setOpacity(opacity)
       }
       
-      Prop<Boolean>("flat") { view: MarkerView, flat ->
+      Prop<Boolean>("flat") { view, flat ->
         view.setFlat(flat)
       }
       
-      Prop<Float>("zIndex") { view: MarkerView, zIndex ->
+      Prop<Float>("zIndex") { view, zIndex ->
         view.setZIndex(zIndex)
       }
       
-      Prop<Map<String, Float>>("anchor") { view: MarkerView, anchor ->
+      Prop<Map<String, Float>>("anchor") { view, anchor ->
         view.setAnchor(anchor)
       }
       
-      Prop<Int>("iconWidth") { view: MarkerView, width ->
+      Prop<Int>("iconWidth") { view, width ->
         view.setIconWidth(width)
       }
       
-      Prop<Int>("iconHeight") { view: MarkerView, height ->
+      Prop<Int>("iconHeight") { view, height ->
         view.setIconHeight(height)
       }
       
-      Prop<Int>("customViewWidth") { view: MarkerView, width ->
+      Prop<Int>("customViewWidth") { view, width ->
         view.setCustomViewWidth(width)
       }
       
-      Prop<Int>("customViewHeight") { view: MarkerView, height ->
+      Prop<Int>("customViewHeight") { view, height ->
         view.setCustomViewHeight(height)
       }
     }

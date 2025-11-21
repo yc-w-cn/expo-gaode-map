@@ -5,8 +5,13 @@ public class MarkerViewModule: Module {
         Name("MarkerView")
         
         View(MarkerView.self) {
-            Prop("position") { (view: MarkerView, position: [String: Double]) in
-                view.setPosition(position)
+            // 拆分 position 为两个独立属性以兼容 React Native 旧架构
+            Prop("latitude") { (view: MarkerView, lat: Double) in
+                view.setLatitude(lat)
+            }
+            
+            Prop("longitude") { (view: MarkerView, lng: Double) in
+                view.setLongitude(lng)
             }
             
             Prop("title") { (view: MarkerView, title: String) in

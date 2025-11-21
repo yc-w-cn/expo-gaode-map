@@ -20,6 +20,10 @@ class MarkerView: ExpoView {
     
     /// 标记点位置
     var position: [String: Double] = [:]
+    /// 临时存储的纬度
+    private var pendingLatitude: Double?
+    /// 临时存储的经度
+    private var pendingLongitude: Double?
     /// 标题
     var title: String = ""
     /// 描述
@@ -281,7 +285,49 @@ class MarkerView: ExpoView {
     }
     
     /**
-     * 设置位置
+     * 设置纬度
+     */
+    func setLatitude(_ lat: Double) {
+        pendingLatitude = lat
+        
+        // 如果经度也已设置，则更新位置
+        if let lng = pendingLongitude {
+            updatePosition(latitude: lat, longitude: lng)
+        }
+    }
+    
+    /**
+     * 设置经度
+     */
+    func setLongitude(_ lng: Double) {
+        pendingLongitude = lng
+        
+        // 如果纬度也已设置，则更新位置
+        if let lat = pendingLatitude {
+            updatePosition(latitude: lat, longitude: lng)
+        }
+    }
+    
+    /**
+     * 更新标记位置（当经纬度都设置后）
+     */
+    private func updatePosition(latitude: Double, longitude: Double) {
+        let position = ["latitude": latitude, "longitude": longitude]
+        
+        if mapView != nil {
+            // 地图已设置，直接更新
+            self.position = position
+            pendingLatitude = nil
+            pendingLongitude = nil
+            updateAnnotation()
+        } else {
+            // 地图还未设置，保存位置待后续应用
+            pendingPosition = position
+        }
+    }
+    
+    /**
+     * 设置位置（兼容旧的 API）
      * @param position 位置坐标 {latitude, longitude}
      */
     func setPosition(_ position: [String: Double]) {

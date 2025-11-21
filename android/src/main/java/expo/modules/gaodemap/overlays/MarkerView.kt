@@ -35,6 +35,8 @@ class MarkerView(context: Context, appContext: AppContext) : ExpoView(context, a
   private var marker: Marker? = null
   private var aMap: AMap? = null
   private var pendingPosition: LatLng? = null
+  private var pendingLatitude: Double? = null  // 临时存储纬度
+  private var pendingLongitude: Double? = null  // 临时存储经度
   private var iconWidth: Int = 0  // 用于自定义图标的宽度
   private var iconHeight: Int = 0  // 用于自定义图标的高度
   private var customViewWidth: Int = 0  // 用于自定义视图（children）的宽度
@@ -76,29 +78,107 @@ class MarkerView(context: Context, appContext: AppContext) : ExpoView(context, a
   }
   
   /**
-   * 设置标记位置
+   * 设置纬度
+   */
+  fun setLatitude(lat: Double) {
+    try {
+      // 验证坐标范围
+      if (lat < -90 || lat > 90) {
+        android.util.Log.e("MarkerView", "❌ 纬度超出有效范围: $lat")
+        return
+      }
+      
+      android.util.Log.d("MarkerView", "📍 setLatitude: $lat")
+      pendingLatitude = lat
+      
+      // 如果经度也已设置，则更新位置
+      pendingLongitude?.let { lng ->
+        updatePosition(lat, lng)
+      }
+    } catch (e: Exception) {
+      android.util.Log.e("MarkerView", "❌ setLatitude 发生异常", e)
+    }
+  }
+  
+  /**
+   * 设置经度
+   */
+  fun setLongitude(lng: Double) {
+    try {
+      // 验证坐标范围
+      if (lng < -180 || lng > 180) {
+        android.util.Log.e("MarkerView", "❌ 经度超出有效范围: $lng")
+        return
+      }
+      
+      android.util.Log.d("MarkerView", "📍 setLongitude: $lng")
+      pendingLongitude = lng
+      
+      // 如果纬度也已设置，则更新位置
+      pendingLatitude?.let { lat ->
+        updatePosition(lat, lng)
+      }
+    } catch (e: Exception) {
+      android.util.Log.e("MarkerView", "❌ setLongitude 发生异常", e)
+    }
+  }
+  
+  /**
+   * 更新标记位置（当经纬度都设置后）
+   */
+  private fun updatePosition(lat: Double, lng: Double) {
+    try {
+      val latLng = LatLng(lat, lng)
+      
+      android.util.Log.d("MarkerView", "📍 updatePosition: ($lat, $lng), marker = $marker, aMap = $aMap")
+      
+      marker?.let {
+        android.util.Log.d("MarkerView", "✅ 更新现有 marker 位置")
+        it.position = latLng
+        pendingPosition = null
+        pendingLatitude = null
+        pendingLongitude = null
+      } ?: run {
+        android.util.Log.d("MarkerView", "❌ marker 为 null")
+        if (aMap != null) {
+          android.util.Log.d("MarkerView", "🔧 aMap 存在，创建新 marker")
+          createOrUpdateMarker()
+          marker?.position = latLng
+          pendingLatitude = null
+          pendingLongitude = null
+        } else {
+          android.util.Log.d("MarkerView", "⏳ aMap 为 null，保存位置等待 setMap")
+          pendingPosition = latLng
+        }
+      }
+    } catch (e: Exception) {
+      android.util.Log.e("MarkerView", "❌ updatePosition 发生异常", e)
+    }
+  }
+  
+  /**
+   * 设置标记位置（兼容旧的 API）
    */
   fun setPosition(position: Map<String, Double>) {
-    val lat = position["latitude"] ?: return
-    val lng = position["longitude"] ?: return
-    val latLng = LatLng(lat, lng)
-    
-    android.util.Log.d("MarkerView", "📍 setPosition 被调用: ($lat, $lng), marker = $marker, aMap = $aMap")
-    
-    marker?.let {
-      android.util.Log.d("MarkerView", "✅ 更新现有 marker 位置")
-      it.position = latLng
-      pendingPosition = null
-    } ?: run {
-      android.util.Log.d("MarkerView", "❌ marker 为 null")
-      if (aMap != null) {
-        android.util.Log.d("MarkerView", "🔧 aMap 存在，创建新 marker")
-        createOrUpdateMarker()
-        marker?.position = latLng
-      } else {
-        android.util.Log.d("MarkerView", "⏳ aMap 为 null，保存位置等待 setMap")
-        pendingPosition = latLng
+    try {
+      val lat = position["latitude"]
+      val lng = position["longitude"]
+      
+      // 验证坐标有效性
+      if (lat == null || lng == null) {
+        android.util.Log.e("MarkerView", "❌ 无效的位置数据: latitude=$lat, longitude=$lng")
+        return
       }
+      
+      // 验证坐标范围
+      if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+        android.util.Log.e("MarkerView", "❌ 坐标超出有效范围: ($lat, $lng)")
+        return
+      }
+      
+      updatePosition(lat, lng)
+    } catch (e: Exception) {
+      android.util.Log.e("MarkerView", "❌ setPosition 发生异常", e)
     }
   }
   

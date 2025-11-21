@@ -47,7 +47,8 @@ function MarkerDeclarative(props: MarkerProps) {
   
   return (
     <NativeMarkerView
-      position={props.position}
+      latitude={props.position.latitude}
+      longitude={props.position.longitude}
       title={props.title}
       snippet={props.snippet}
       draggable={props.draggable}
